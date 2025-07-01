@@ -194,3 +194,6 @@ api_keys.json
 
 # Node modules (if any frontend components)
 node_modules/ 
+
+output
+data
