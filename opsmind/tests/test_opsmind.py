@@ -9,9 +9,8 @@ import json
 from pathlib import Path
 import pandas as pd
 
-# Add the current directory to Python path
-sys.path.append('.')
-sys.path.append('./opsmind')
+# Add the parent directory to Python path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def test_data_loading():
     """Test that we can load the datasets"""
@@ -82,7 +81,7 @@ def test_agent_imports():
     print("\n🤖 Testing agent imports...")
     
     try:
-        from opsmind.core import root_agent, listener_agent, synthesizer_agent, writer_agent
+        from opsmind.core.agents import root_agent, listener_agent, synthesizer_agent, writer_agent
         print("✅ Successfully imported all agents")
         print(f"   - Root agent: {root_agent.name}")
         print(f"   - Listener agent: {listener_agent.name}")

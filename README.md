@@ -4,11 +4,13 @@ OpsMind is an AI-powered incident management system built with Google's Agent De
 
 ## 🏗️ Architecture
 
-OpsMind uses a **3-agent system**:
+OpsMind uses a **multi-agent system**:
 
 1. **Listener Agent** - Watches incident logs and structures data
 2. **Synthesizer Agent** - Uses RAG to analyze incidents with historical context  
 3. **Writer Agent** - Generates markdown postmortem documents
+4. **Pipeline Agent** - Orchestrates the flow between agents
+5. **Root Agent** - Main user interface and entry point
 
 ## 🚀 Quick Start
 
@@ -25,31 +27,24 @@ OpsMind uses a **3-agent system**:
 pip install -r requirements.txt
 
 # Verify installation
-python test_opsmind.py
+python opsmind/tests/test_opsmind.py
 ```
 
 ### 2. Configuration
 
-Copy the environment template and configure:
+Configure your environment variables in `opsmind/config/settings.py` or set them directly:
 
 ```bash
-cp opsmind_agents/.env.template opsmind_agents/.env
-```
-
-Edit `.env` with your Google Cloud settings:
-
-```bash
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=your-project-id
-GOOGLE_CLOUD_LOCATION=us-central1
-MODEL=gemini-2.0-flash-001
+export GOOGLE_API_KEY=YOUR_API_KEY
+export GOOGLE_GENAI_USE_VERTEXAI=FALSE
+export MODEL=gemini-2.0-flash-001
 ```
 
 ### 3. Run OpsMind
 
 **Command Line Interface:**
 ```bash
-adk run opsmind_agents
+adk run opsmind
 ```
 
 **Web Interface:**
@@ -57,12 +52,17 @@ adk run opsmind_agents
 adk web
 ```
 
+**Try the Example:**
+```bash
+python opsmind/examples/basic_usage.py
+```
+
 ## 📊 Data Sources
 
 OpsMind uses two datasets for RAG-based learning:
 
-- **Incident Logs** (`data/incidents/`) - IT incident event logs
-- **Jira Issues** (`data/jira/`) - Apache project Jira tickets
+- **Incident Logs** (`opsmind/data/incidents/`) - IT incident event logs
+- **Jira Issues** (`opsmind/data/jira/`) - Apache project Jira tickets
 
 The system automatically downloads and processes these datasets on first run.
 
@@ -105,25 +105,57 @@ Once OpsMind is running, try these prompts:
 ### Writer Agent
 - **Role**: Generate postmortem documents
 - **Input**: Incident summaries
-- **Output**: Markdown postmortems in `./output/`
+- **Output**: Markdown postmortems
 - **Tools**: `save_postmortem`
+
+### Pipeline Agent
+- **Role**: Orchestrate agent workflows
+- **Input**: User requests
+- **Output**: Coordinated agent responses
+
+### Root Agent
+- **Role**: Main user interface
+- **Input**: User queries
+- **Output**: Delegated responses from specialized agents
 
 ## 📁 Project Structure
 
 ```
 ops/
-├── opsmind_agents/          # Main agent system
-│   ├── agent.py            # 3-agent implementation
-│   ├── __init__.py         
-│   └── .env.template       # Configuration template
-├── data/                   # Training datasets
-│   ├── incidents/          # IT incident logs
-│   └── jira/              # Jira issues
-├── output/                 # Generated postmortems
-├── callback_logging.py     # ADK logging utilities
+├── opsmind/                # Main agent system
+│   ├── core/              # Core agent implementations
+│   │   ├── agents/        # Individual agent definitions
+│   │   │   ├── listener_agent.py
+│   │   │   ├── synthesizer_agent.py
+│   │   │   ├── writer_agent.py
+│   │   │   ├── pipeline_agent.py
+│   │   │   └── root_agent.py
+│   │   ├── agents.py      # Agent imports
+│   │   └── agent.py       # Main entry point
+│   ├── tools/             # Tool functions
+│   │   ├── context_tools.py
+│   │   ├── incident_tools.py
+│   │   └── postmortem_tools.py
+│   ├── utils/             # Utility functions
+│   │   └── logging.py
+│   ├── config/            # Configuration
+│   │   └── settings.py
+│   ├── data/              # Training datasets
+│   │   ├── incidents/     # IT incident logs
+│   │   └── jira/         # Jira issues
+│   ├── examples/          # Usage examples
+│   │   └── basic_usage.py
+│   ├── tests/             # Test suite
+│   │   └── test_opsmind.py
+│   ├── docs/              # Documentation
+│   │   └── README.md
+│   └── __init__.py
 ├── requirements.txt        # Dependencies
-├── test_opsmind.py        # Test suite
-└── README.md              # This file
+├── pyproject.toml         # Project configuration
+├── Makefile              # Build automation
+├── DEVELOPMENT.md        # Development guide
+├── CHANGELOG.md          # Version history
+└── README.md             # This file
 ```
 
 ## 🧪 Testing
@@ -131,14 +163,14 @@ ops/
 Run the test suite to verify everything is working:
 
 ```bash
-python test_opsmind.py
+python opsmind/tests/test_opsmind.py
 ```
 
 The tests verify:
 - ✅ Data loading from CSV files
 - ✅ Agent imports and initialization  
 - ✅ Tool function execution
-- ✅ Output directory setup
+- ✅ Configuration setup
 
 ## 📋 Sample Output
 
@@ -181,35 +213,38 @@ Based on similar past incidents, implement automated rollback procedures...
 
 - **RAG-powered Analysis**: Uses historical incident and Jira data for context
 - **Automatic Postmortems**: Generates comprehensive markdown documents
+- **Multi-Agent Architecture**: Specialized agents for different tasks
 - **Local Processing**: No external APIs required beyond Google Cloud
-- **Structured Pipeline**: Clear separation of concerns across 3 agents
+- **Structured Pipeline**: Clear separation of concerns across agents
 - **Extensible Design**: Easy to add new data sources and agents
 
-## 🚧 MVP Limitations
+## 🚧 Current Status
 
-This is a learning prototype with these constraints:
+This is an active development project with these capabilities:
 
-- Uses simple keyword-based RAG (no vector embeddings yet)
-- Limited to local file processing
-- Basic incident pattern matching
-- Sample datasets only
-- No real-time streaming (processes in batches)
+- Enhanced Jira integration (issues, comments, changelog, links)
+- Multi-agent architecture with specialized roles
+- RAG-based analysis using historical data
+- File output with comprehensive postmortems
+- Pattern recognition and insights
 
 ## 🔄 Usage Workflow
 
 1. **Data Ingestion**: Listener Agent processes incident CSVs
 2. **Analysis**: Synthesizer Agent applies RAG over historical data  
 3. **Documentation**: Writer Agent creates markdown postmortems
-4. **Output**: Files saved to `./output/postmortem_*.md`
+4. **Orchestration**: Pipeline Agent coordinates the workflow
+5. **Interface**: Root Agent provides user interaction
 
 ## 🤝 Contributing
 
-This is a prototype following the ADK blog tutorial. To extend OpsMind:
+To extend OpsMind:
 
-1. Add new agent types in `agent.py`
-2. Implement additional tools for data processing
-3. Enhance RAG with vector embeddings
-4. Add real-time streaming capabilities
+1. Add new agent types in `opsmind/core/agents/`
+2. Implement additional tools in `opsmind/tools/`
+3. Enhance RAG capabilities
+4. Add new data source integrations
+5. Improve the user interface
 
 ## 📚 References
 
