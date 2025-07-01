@@ -39,10 +39,9 @@ cp opsmind_agents/.env.template opsmind_agents/.env
 Edit `.env` with your Google Cloud settings:
 
 ```bash
-GOOGLE_GENAI_USE_VERTEXAI=TRUE
-GOOGLE_CLOUD_PROJECT=your-project-id
-GOOGLE_CLOUD_LOCATION=us-central1
-MODEL=gemini-2.0-flash-001
+GOOGLE_GENAI_USE_VERTEXAI=FALSE
+GOOGLE_API_KEY=API_KEY
+MODEL=gemini-2.0-flash
 ```
 
 ### 3. Run OpsMind
@@ -61,8 +60,8 @@ adk web
 
 OpsMind uses two datasets for RAG-based learning:
 
-- **Incident Logs** (`data/incidents/`) - IT incident event logs
-- **Jira Issues** (`data/jira/`) - Apache project Jira tickets
+- **Incident Logs** (`opsmind/data/incidents/`) - IT incident event logs
+- **Jira Issues** (`opsmind/data/jira/`) - Apache project Jira tickets
 
 The system automatically downloads and processes these datasets on first run.
 
@@ -72,7 +71,6 @@ Once OpsMind is running, try these prompts:
 
 ### Basic Operations
 ```
-"Process recent incidents"
 "Summarize incident INC0000045" 
 "Generate postmortem for INC0000045"
 ```
