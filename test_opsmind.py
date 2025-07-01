@@ -7,34 +7,70 @@ import os
 import sys
 import json
 from pathlib import Path
+import pandas as pd
 
 # Add the current directory to Python path
 sys.path.append('.')
-sys.path.append('./opsmind_agents')
+sys.path.append('./opsmind')
 
 def test_data_loading():
     """Test that we can load the datasets"""
     print("🔍 Testing data loading...")
     
     try:
-        from opsmind_agents.agent import load_incident_data, load_jira_data
+        from opsmind.agent import load_incident_data, load_jira_data
         
         # Test incident data loading
         incident_df = load_incident_data()
         print(f"✅ Loaded {len(incident_df)} incident records")
         
-        # Test Jira data loading  
-        jira_df = load_jira_data()
-        print(f"✅ Loaded {len(jira_df)} Jira issues")
+        # Test Jira data loading - returns a dictionary of DataFrames
+        jira_data = load_jira_data()
+        
+        # Count total Jira records across all data types
+        total_jira_records = 0
+        for key, df in jira_data.items():
+            if not df.empty:
+                total_jira_records += len(df)
+        
+        print(f"✅ Loaded {total_jira_records} total Jira records")
+        print(f"   - Issues: {len(jira_data.get('issues', pd.DataFrame()))}")
+        print(f"   - Comments: {len(jira_data.get('comments', pd.DataFrame()))}")
+        print(f"   - Changelog: {len(jira_data.get('changelog', pd.DataFrame()))}")
+        print(f"   - Issue Links: {len(jira_data.get('issuelinks', pd.DataFrame()))}")
         
         # Show sample data
         if not incident_df.empty:
             print("\n📋 Sample incident data:")
-            print(incident_df[['number', 'incident_state', 'category', 'priority']].head(3))
+            # Check which columns exist before trying to access them
+            available_cols = incident_df.columns.tolist()
+            display_cols = []
+            for col in ['number', 'incident_state', 'category', 'priority']:
+                if col in available_cols:
+                    display_cols.append(col)
             
-        if not jira_df.empty:
-            print("\n🎫 Sample Jira data:")
-            print(jira_df[['key', 'summary', 'priority.name', 'status.name']].head(3))
+            if display_cols:
+                print(incident_df[display_cols].head(3))
+            else:
+                print("Available columns:", available_cols[:5])  # Show first 5 columns
+                print(incident_df.head(3))
+            
+        # Show sample Jira issues data
+        jira_issues = jira_data.get('issues', pd.DataFrame())
+        if not jira_issues.empty:
+            print("\n🎫 Sample Jira issues data:")
+            # Check which columns exist before trying to access them
+            available_cols = jira_issues.columns.tolist()
+            display_cols = []
+            for col in ['key', 'summary', 'priority.name', 'status.name']:
+                if col in available_cols:
+                    display_cols.append(col)
+            
+            if display_cols:
+                print(jira_issues[display_cols].head(3))
+            else:
+                print("Available columns:", available_cols[:5])  # Show first 5 columns
+                print(jira_issues.head(3))
             
         return True
     except Exception as e:
@@ -46,7 +82,7 @@ def test_agent_imports():
     print("\n🤖 Testing agent imports...")
     
     try:
-        from opsmind_agents.agent import root_agent, listener_agent, synthesizer_agent, writer_agent
+        from opsmind.agent import root_agent, listener_agent, synthesizer_agent, writer_agent
         print("✅ Successfully imported all agents")
         print(f"   - Root agent: {root_agent.name}")
         print(f"   - Listener agent: {listener_agent.name}")
@@ -62,7 +98,7 @@ def test_tool_functions():
     print("\n🔧 Testing tool functions...")
     
     try:
-        from opsmind_agents.agent import get_incident_context, create_incident_summary
+        from opsmind.agent import get_incident_context, create_incident_summary
         
         # Simple test to verify functions exist and are callable
         print("✅ Tool functions imported successfully")
@@ -134,7 +170,7 @@ def main():
         print("\n🎉 All tests passed! OpsMind is ready to use.")
         print("\nNext steps:")
         print("1. Configure your .env file with Google Cloud credentials")
-        print("2. Run: adk run opsmind_agents")
+        print("2. Run: adk run opsmind")
         print("3. Or run: adk web (for web interface)")
         
         # Show sample incident for testing
