@@ -166,6 +166,13 @@ logs/
 # data/
 # opsmind/data/
 
+# Large CSV data files (exceed GitHub file size limits)
+opsmind/data/jira/comments.csv
+opsmind/data/jira/issues.csv
+opsmind/data/jira/changelog.csv
+opsmind/data/jira/issuelinks.csv
+opsmind/data/incidents/incident_event_log.csv
+
 # API keys and secrets (in case they exist as separate files)
 secrets.json
 api_keys.json
