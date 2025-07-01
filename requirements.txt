@@ -1,0 +1,8 @@
+google-adk==1.0.0
+langchain-community==0.3.20
+wikipedia==1.4.0
+crewai-tools==0.38.1
+pandas>=1.5.0
+numpy>=1.21.0
+python-dotenv>=0.19.0
+deprecated>=1.2.0 
