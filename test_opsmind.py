@@ -18,7 +18,7 @@ def test_data_loading():
     print("🔍 Testing data loading...")
     
     try:
-        from opsmind.agent import load_incident_data, load_jira_data
+        from opsmind.data import load_incident_data, load_jira_data
         
         # Test incident data loading
         incident_df = load_incident_data()
@@ -82,7 +82,7 @@ def test_agent_imports():
     print("\n🤖 Testing agent imports...")
     
     try:
-        from opsmind.agent import root_agent, listener_agent, synthesizer_agent, writer_agent
+        from opsmind.core import root_agent, listener_agent, synthesizer_agent, writer_agent
         print("✅ Successfully imported all agents")
         print(f"   - Root agent: {root_agent.name}")
         print(f"   - Listener agent: {listener_agent.name}")
@@ -98,7 +98,7 @@ def test_tool_functions():
     print("\n🔧 Testing tool functions...")
     
     try:
-        from opsmind.agent import get_incident_context, create_incident_summary
+        from opsmind.tools import get_incident_context, create_incident_summary
         
         # Simple test to verify functions exist and are callable
         print("✅ Tool functions imported successfully")
