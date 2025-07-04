@@ -1,9 +1,9 @@
 """
-Writer Agent for OpsMind - Generate postmortems with Jira insights
+Writer Agent for OpsMind - Generates postmortem documents
 """
 from google.adk.agents import Agent
-from ...config import MODEL_NAME
-from ...tools import generate_postmortem_content, save_postmortem
+from opsmind.config import MODEL_NAME
+from opsmind.tools import generate_postmortem_content, save_postmortem
 
 # 3. Writer Agent - Generate postmortems with Jira insights
 writer_agent = Agent(

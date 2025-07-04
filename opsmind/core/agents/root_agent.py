@@ -3,8 +3,8 @@ Root Agent for OpsMind - Entry point with enhanced Jira capabilities
 """
 from google.adk.agents import Agent
 from google.genai import types
-from ...config import MODEL_NAME
-from ...tools import (
+from opsmind.config import MODEL_NAME
+from opsmind.tools import (
     get_incident_context,
     process_incident_stream,
     create_incident_summary,

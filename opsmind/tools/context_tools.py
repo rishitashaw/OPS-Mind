@@ -3,23 +3,17 @@ Context and RAG tools for OpsMind
 """
 import pandas as pd
 import numpy as np
-from typing import Any
-from google.adk.tools.tool_context import ToolContext
-from ..data import load_incident_data, load_jira_data
-from ..config import logger
+from typing import Any, Dict
 
-def safe_get(row, key, default="unknown"):
-    """Safely get value from pandas row, handling NaN values"""
-    value = row.get(key, default)
-    # Handle various NaN representations
-    if pd.isna(value) or value is None or str(value).lower() == 'nan':
-        return default
-    return str(value) if value != default else default
+from google.adk.tools.tool_context import ToolContext
+from opsmind.data import load_incident_data, load_jira_data
+from opsmind.config import logger
+from opsmind.utils import safe_get
 
 def get_incident_context(
     tool_context: ToolContext,
     query: str
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Get incident context for RAG-based queries with enhanced Jira data"""
     try:
         # Load data if not already in state

@@ -1,17 +1,18 @@
 """
 Postmortem generation tools for OpsMind
 """
+import os
 from pathlib import Path
 from datetime import datetime
+from typing import Any, Dict
+
 from google.adk.tools.tool_context import ToolContext
-from typing import Any
-# Import will be handled at runtime to avoid circular imports
-from ..config import OUTPUT_DIR, logger
+from opsmind.config import OUTPUT_DIR, logger
 
 def generate_postmortem_content(
     tool_context: ToolContext,
     incident_id: str
-) -> dict[str, str]:
+) -> Dict[str, str]:
     """Generate postmortem content based on incident and Jira data"""
     try:
         # Import here to avoid circular import
@@ -164,7 +165,7 @@ def save_postmortem(
     tool_context: ToolContext,
     incident_id: str,
     postmortem_content: str
-) -> dict[str, str]:
+) -> Dict[str, str]:
     """Save postmortem to markdown file and return content for display"""
     try:
         output_dir = Path(OUTPUT_DIR)
@@ -191,7 +192,7 @@ def save_postmortem(
 def list_postmortem_files(
     tool_context: ToolContext,
     show_content: bool = False
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """List existing postmortem files and optionally show their content"""
     try:
         output_dir = Path(OUTPUT_DIR)

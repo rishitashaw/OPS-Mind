@@ -2,8 +2,8 @@
 Listener Agent for OpsMind - Watches incident data
 """
 from google.adk.agents import Agent
-from ...config import MODEL_NAME
-from ...tools import process_incident_stream
+from opsmind.config import MODEL_NAME
+from opsmind.tools import process_incident_stream
 
 # 1. Listener Agent - Watches incident data
 listener_agent = Agent(

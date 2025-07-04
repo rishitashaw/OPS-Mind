@@ -1,40 +1,17 @@
 """
 Incident processing tools for OpsMind
 """
-import json
-import pandas as pd
 from datetime import datetime
-from typing import Any
-from google.adk.tools.tool_context import ToolContext
-from ..config import logger
+from typing import Any, Dict
 
-def safe_json_loads(incident_data: str) -> Any:
-    """Safely load JSON data with NaN handling"""
-    try:
-        # First attempt to load JSON normally
-        data = json.loads(incident_data)
-        
-        # Clean any NaN values that might have slipped through
-        def clean_nan_values(obj):
-            if isinstance(obj, dict):
-                return {k: clean_nan_values(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [clean_nan_values(v) for v in obj]
-            elif pd.isna(obj) or str(obj).lower() == 'nan':
-                return "unknown"
-            else:
-                return obj
-        
-        return clean_nan_values(data)
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON decode error: {e}")
-        logger.error(f"Problematic JSON data: {incident_data[:200]}...")
-        raise e
+from google.adk.tools.tool_context import ToolContext
+from opsmind.config import logger
+from opsmind.utils import safe_json_loads
 
 def process_incident_stream(
     tool_context: ToolContext,
     incident_data: str
-) -> dict[str, str]:
+) -> Dict[str, str]:
     """Process incident data and add to context for RAG"""
     try:
         incident_info = safe_json_loads(incident_data)
@@ -50,7 +27,7 @@ def create_incident_summary(
     tool_context: ToolContext,
     incident_id: str,
     summary_text: str
-) -> dict[str, str]:
+) -> Dict[str, str]:
     """Create incident summary and store for postmortem generation"""
     summaries = tool_context.state.get("incident_summaries", {})
     summaries[incident_id] = {
