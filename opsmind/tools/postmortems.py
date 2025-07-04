@@ -16,7 +16,7 @@ def generate_postmortem_content(
     """Generate postmortem content based on incident and Jira data"""
     try:
         # Import here to avoid circular import
-        from .context_tools import get_incident_context
+        from opsmind.context import get_incident_context
         
         # Get incident context data
         context_result = get_incident_context(tool_context, incident_id)

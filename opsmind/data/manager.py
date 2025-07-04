@@ -14,7 +14,7 @@ from opsmind.data.loader import load_incident_data, load_jira_data
 from opsmind.data.connectors import ConnectorManager, JiraConnector, ConnectorConfig, DataRecord
 from opsmind.config import logger
 from opsmind.utils import safe_get
-from opsmind.tools.realtime import RealTimeContextManager
+from opsmind.context import RealTimeContextManager
 
 
 

@@ -2,9 +2,9 @@
 Real-time data connectors for OpsMind RAG system
 """
 
-from .base_connector import BaseConnector, ConnectorConfig, DataRecord
-from .jira_connector import JiraConnector, create_jira_connector
-from .connector_manager import ConnectorManager
+from .base import BaseConnector, ConnectorConfig, DataRecord
+from .jira import JiraConnector, create_jira_connector
+from .manager import ConnectorManager
 
 __all__ = [
     'BaseConnector',

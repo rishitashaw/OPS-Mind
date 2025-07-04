@@ -6,8 +6,8 @@ from opsmind.config import MODEL_NAME
 from opsmind.tools import process_incident_stream
 
 # 1. Listener Agent - Watches incident data
-listener_agent = Agent(
-    name="listener_agent",
+listener = Agent(
+    name="listener",
     model=MODEL_NAME,
     description="Watch incident log entries and emit structured events",
     instruction="""

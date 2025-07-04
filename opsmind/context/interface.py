@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 from google.adk.tools.tool_context import ToolContext
 from opsmind.data.manager import get_manager, SourceType
 from opsmind.data.connectors import ConnectorConfig
-from opsmind.data.connectors.jira_connector import create_jira_connector
+from opsmind.data.connectors.jira import create_jira_connector
 from opsmind.config import logger, get_jira_config
 from opsmind.config.settings import PRESETS
 

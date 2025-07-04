@@ -10,7 +10,7 @@ from typing import List, Dict, Any, Optional, Callable
 from datetime import datetime
 
 from opsmind.data.connectors import ConnectorManager, JiraConnector, ConnectorConfig, DataRecord
-from opsmind.data.connectors.jira_connector import create_jira_connector
+from opsmind.data.connectors.jira import create_jira_connector
 from opsmind.config import logger
 
 

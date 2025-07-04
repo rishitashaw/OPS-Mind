@@ -6,8 +6,8 @@ from opsmind.config import MODEL_NAME
 from opsmind.tools import generate_postmortem_content, save_postmortem
 
 # 3. Writer Agent - Generate postmortems with Jira insights
-writer_agent = Agent(
-    name="writer_agent",
+writer = Agent(
+    name="writer",
     model=MODEL_NAME,
     description="Generate comprehensive markdown postmortems from incident summaries with Jira data integration",
     instruction="""

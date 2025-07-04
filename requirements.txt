@@ -7,6 +7,9 @@ python-dotenv>=1.0.0
 # Real-time connectors
 aiohttp>=3.9.0
 
+# System monitoring for guardrails
+psutil>=5.9.0
+
 # Development and optional dependencies
 # For MQTT connector (future use)
 # asyncio-mqtt>=0.16.0 

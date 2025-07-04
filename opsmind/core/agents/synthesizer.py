@@ -3,11 +3,12 @@ Synthesizer Agent for OpsMind - RAG-based analysis with enhanced Jira integratio
 """
 from google.adk.agents import Agent
 from opsmind.config import MODEL_NAME
-from opsmind.tools import get_incident_context, create_incident_summary
+from opsmind.tools import create_incident_summary
+from opsmind.context import get_incident_context
 
 # 2. Synthesizer Agent - RAG-based analysis with enhanced Jira integration
-synthesizer_agent = Agent(
-    name="synthesizer_agent", 
+synthesizer = Agent(
+    name="synthesizer", 
     model=MODEL_NAME,
     description="Convert incident data into summaries using RAG context with full Jira integration",
     instruction="""

@@ -8,7 +8,7 @@ from typing import Dict, List, Any, Optional, Callable
 from datetime import datetime
 import logging
 
-from .base_connector import BaseConnector, DataRecord, ConnectorConfig
+from .base import BaseConnector, DataRecord, ConnectorConfig
 
 logger = logging.getLogger(__name__)
 

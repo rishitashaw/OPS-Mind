@@ -5,18 +5,22 @@ from google.adk.agents import Agent
 from google.genai import types
 from opsmind.config import MODEL_NAME
 from opsmind.tools import (
-    get_incident_context,
     process_incident_stream,
     create_incident_summary,
     generate_postmortem_content,
     save_postmortem,
-    list_postmortem_files
+    list_postmortem_files,
 )
-from .pipeline_agent import opsmind_pipeline
+from opsmind.context import get_incident_context
+from opsmind.core.safety import (
+    check_guardrails_health,
+    get_system_resources
+)
+from .pipeline import pipeline
 
 # Root Agent - Entry point with enhanced Jira capabilities
-root_agent = Agent(
-    name="opsmind",
+root = Agent(
+    name="root",
     model=MODEL_NAME,
     description="OpsMind - Autonomous Incident-to-Insight Assistant with Full Jira Integration",
     instruction="""
@@ -74,8 +78,8 @@ root_agent = Agent(
     What would you like me to help you with today?
     """,
     generate_content_config=types.GenerateContentConfig(
-        temperature=0.1,
+        top_p=0.1,
     ),
-    sub_agents=[opsmind_pipeline],
-    tools=[get_incident_context, process_incident_stream, create_incident_summary, generate_postmortem_content, save_postmortem, list_postmortem_files]
+    sub_agents=[pipeline],
+    tools=[get_incident_context, process_incident_stream, create_incident_summary, generate_postmortem_content, save_postmortem, list_postmortem_files, check_guardrails_health, get_system_resources]
 ) 

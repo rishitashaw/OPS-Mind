@@ -4,13 +4,25 @@ OpsMind is an AI-powered incident management system built with Google's Agent De
 
 ## 🏗️ Architecture
 
-OpsMind uses a **multi-agent system**:
+OpsMind uses a **multi-agent system** with integrated safety guardrails:
 
 1. **Listener Agent** - Watches incident logs and structures data
 2. **Synthesizer Agent** - Uses RAG to analyze incidents with historical context  
 3. **Writer Agent** - Generates markdown postmortem documents
 4. **Pipeline Agent** - Orchestrates the flow between agents
 5. **Root Agent** - Main user interface and entry point
+6. **Guardrail System** - Comprehensive safety framework with content filtering, rate limiting, and security validation
+
+## 🛡️ Safety & Security Features
+
+OpsMind includes a comprehensive safety framework built on Google ADK's safety standards:
+
+- **Content Filtering**: UI content escaping and input validation
+- **Rate Limiting**: Prevents abuse and ensures system stability
+- **Circuit Breakers**: Automatic failover and error handling
+- **Security Validation**: Input sanitization and output verification
+- **Compliance**: Google ADK-compliant safety measures
+- **Monitoring**: Real-time safety metric tracking
 
 ## 🚀 Quick Start
 
@@ -206,6 +218,17 @@ Once OpsMind is running, try these prompts:
 - **Input**: User queries
 - **Output**: Delegated responses from specialized agents
 
+### Guardrail System
+- **Role**: Safety monitoring and content filtering across all agents
+- **Input**: All agent inputs and outputs
+- **Output**: Safety validation and content escaping
+- **Features**: 
+  - UI content escaping (Google ADK safety compliance)
+  - Rate limiting and circuit breakers
+  - Input validation and output sanitization
+  - Security monitoring and threat detection
+  - Compliance enforcement
+
 ## 📁 Project Structure
 
 ```
@@ -214,21 +237,33 @@ ops/
 │   ├── config/                 # Configuration management
 │   │   ├── __init__.py        # Config exports
 │   │   └── settings.py        # Environment variables & validation
+│   ├── context/               # Context management and retrieval
+│   │   ├── __init__.py        # Context exports
+│   │   ├── interface.py       # Context interface definitions
+│   │   ├── manager.py         # Context management logic
+│   │   └── retrieval.py       # RAG context retrieval
 │   ├── core/                   # Core agent implementations
 │   │   ├── agents/            # Individual agent definitions
-│   │   │   ├── listener_agent.py      # Incident data processing
-│   │   │   ├── synthesizer_agent.py   # RAG-based analysis
-│   │   │   ├── writer_agent.py        # Postmortem generation
-│   │   │   ├── pipeline_agent.py      # Agent orchestration
-│   │   │   └── root_agent.py          # Main user interface
-│   │   ├── __init__.py        # Core exports
-│   │   └── agents.py          # Agent registry
+│   │   │   ├── __init__.py           # Agent exports
+│   │   │   ├── listener.py           # Incident data processing
+│   │   │   ├── synthesizer.py        # RAG-based analysis
+│   │   │   ├── writer.py             # Postmortem generation
+│   │   │   ├── pipeline.py           # Agent orchestration
+│   │   │   ├── root.py               # Main user interface
+│   │   │   └── guardrails.py         # Guardrail agent implementation
+│   │   ├── safety/            # Safety and security framework
+│   │   │   ├── __init__.py           # Safety exports
+│   │   │   ├── agent.py              # Safety monitoring agent
+│   │   │   ├── framework.py          # Core safety framework
+│   │   │   └── tools.py              # Safety management tools
+│   │   └── __init__.py        # Core exports
 │   ├── data/                   # Data management & loading
 │   │   ├── connectors/        # Real-time data connectors
-│   │   │   ├── base_connector.py      # Connector interface
-│   │   │   ├── jira_connector.py      # Jira real-time connector
-│   │   │   ├── connector_manager.py   # Multi-connector management
-│   │   │   └── __init__.py            # Connector exports
+│   │   │   ├── __init__.py           # Connector exports
+│   │   │   ├── base.py               # Base connector interface
+│   │   │   ├── jira_connector.py     # Jira real-time connector
+│   │   │   ├── jira.py               # Jira data processing
+│   │   │   └── manager.py            # Multi-connector management
 │   │   ├── datasets/          # Data files (download from Kaggle)
 │   │   │   ├── incidents/     # IT incident logs
 │   │   │   │   └── incident_event_log.csv
@@ -241,26 +276,20 @@ ops/
 │   │   ├── loader.py          # CSV data loading functions
 │   │   └── manager.py         # Unified data source management
 │   ├── tools/                  # Agent tool functions
-│   │   ├── context_tools.py   # RAG context retrieval
-│   │   ├── context.py         # Unified data access interface
-│   │   ├── incident_tools.py  # Incident processing tools
-│   │   ├── postmortem_tools.py # Postmortem generation
-│   │   ├── realtime.py        # Real-time data management
-│   │   └── __init__.py        # Tool exports
+│   │   ├── __init__.py        # Tool exports
+│   │   ├── guardrail_tools.py # Safety and security tools
+│   │   ├── incidents.py       # Incident processing tools
+│   │   └── postmortems.py     # Postmortem generation tools
 │   ├── utils/                  # Utility functions
-│   │   ├── data_helpers.py    # Data processing utilities
-│   │   ├── logging.py         # Logging configuration
-│   │   └── __init__.py        # Utils exports
-│   ├── docs/                   # Documentation
-│   │   └── README.md          # Detailed documentation
+│   │   ├── __init__.py        # Utils exports
+│   │   ├── helpers.py         # Data processing utilities
+│   │   └── logging.py         # Logging configuration
 │   ├── __init__.py            # Main package entry
 │   └── agent.py               # ADK compatibility layer
 ├── output/                     # Generated postmortems & logs
 ├── requirements.txt            # Python dependencies
 ├── pyproject.toml             # Project configuration
 ├── Makefile                   # Development commands
-├── DEVELOPMENT.md             # Development guide
-├── CHANGELOG.md               # Version history
 └── README.md                  # This file
 ```
 
@@ -338,6 +367,7 @@ Based on analysis of 127 similar incidents:
 - **Real-time Integration**: Optional live Jira connector for current incidents
 - **Pattern Recognition**: Identifies recurring issues and proven solutions
 - **Multi-Agent Architecture**: Specialized agents for different tasks
+- **Safety Guardrails**: Google ADK-compliant safety measures including UI content escaping
 - **Extensible Design**: Easy to add new data sources and connectors
 
 ## 🔄 Usage Workflow

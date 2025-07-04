@@ -3,8 +3,11 @@ Compatibility layer for ADK framework
 This module maintains backward compatibility while using the new modular structure
 """
 
-# Import the root_agent from our new modular structure
-from .core.agents import root_agent
+# Import the root from our new modular structure
+from .core.agents import root
 
 # Export for ADK framework compatibility
-__all__ = ['root_agent'] 
+# ADK framework expects 'root_agent' attribute but we want to keep it as 'root'
+root_agent = root  # Alias for ADK compatibility
+
+__all__ = ['root', 'root_agent'] 
