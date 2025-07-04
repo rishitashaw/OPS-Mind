@@ -1,0 +1,111 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: opsmind
+  labels:
+    cloud.googleapis.com/location: us-central1
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+spec:
+  template:
+    metadata:
+      labels:
+        run.googleapis.com/startupProbeType: Default
+      annotations:
+        autoscaling.knative.dev/maxScale: "10"
+        autoscaling.knative.dev/minScale: "0"
+        run.googleapis.com/cloudsql-instances: ""
+        run.googleapis.com/cpu-throttling: "true"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 300
+      serviceAccountName: opsmind-service-account
+      containers:
+      - image: gcr.io/PROJECT_ID/opsmind:latest
+        ports:
+        - name: http1
+          containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: GOOGLE_CLOUD_PROJECT
+          valueFrom:
+            configMapKeyRef:
+              name: opsmind-config
+              key: project_id
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: opsmind-secrets
+              key: google_api_key
+        - name: GOOGLE_GENAI_USE_VERTEXAI
+          value: "TRUE"
+        - name: MODEL
+          value: "gemini-2.0-flash-001"
+        - name: JIRA_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: opsmind-config
+              key: jira_enabled
+        - name: JIRA_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: opsmind-secrets
+              key: jira_base_url
+              optional: true
+        - name: JIRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: opsmind-secrets
+              key: jira_username
+              optional: true
+        - name: JIRA_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: opsmind-secrets
+              key: jira_api_token
+              optional: true
+        - name: JIRA_PROJECT_KEYS
+          valueFrom:
+            configMapKeyRef:
+              name: opsmind-config
+              key: jira_project_keys
+              optional: true
+        - name: JIRA_POLL_INTERVAL
+          value: "300"
+        - name: DATASETS_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: opsmind-config
+              key: datasets_bucket
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+      volumes:
+      - name: cloudsql
+        csi:
+          driver: gcp-cloudsql-csi-driver
+          readOnly: true 
