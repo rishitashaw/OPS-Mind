@@ -147,8 +147,6 @@ Desktop.ini
 
 # Project specific
 output/
-incidents/
-jira/
 logs/
 temp/
 *.tmp
