@@ -14,6 +14,11 @@ from .settings import (
     JIRA_MAX_RETRIES,
     JIRA_RETRY_DELAY,
     JIRA_ENABLED,
+    GCP_BUCKET_NAME,
+    GCP_PROJECT_ID,
+    GCP_STORAGE_ENABLED,
+    GCP_POSTMORTEM_FOLDER,
+    GCP_FILE_EXPIRATION_DAYS,
     PROJECT_ROOT,
     DATA_DIR,
     OUTPUT_DIR,
@@ -25,7 +30,8 @@ from .settings import (
     logger,
     setup_logging,
     validate_config,
-    get_jira_config
+    get_jira_config,
+    get_gcp_config
 )
 
 __all__ = [
@@ -41,6 +47,11 @@ __all__ = [
     "JIRA_MAX_RETRIES",
     "JIRA_RETRY_DELAY",
     "JIRA_ENABLED",
+    "GCP_BUCKET_NAME",
+    "GCP_PROJECT_ID",
+    "GCP_STORAGE_ENABLED",
+    "GCP_POSTMORTEM_FOLDER",
+    "GCP_FILE_EXPIRATION_DAYS",
     "PROJECT_ROOT",
     "DATA_DIR",
     "OUTPUT_DIR",
@@ -52,5 +63,6 @@ __all__ = [
     "logger",
     "setup_logging",
     "validate_config",
-    "get_jira_config"
+    "get_jira_config",
+    "get_gcp_config"
 ] 

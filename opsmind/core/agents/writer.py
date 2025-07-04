@@ -15,17 +15,18 @@ writer = Agent(
     1. Take incident summaries and create detailed postmortem documents enriched with Jira data
     2. Structure postmortems in a clear, professional format with Jira ticket references
     3. Include root cause analysis, timeline, and action items based on comprehensive data
-    4. Save documents in markdown format AND display them in chat
-    5. Provide download information for the saved files
+    4. Save documents to GCP Cloud Storage and provide downloadable links
+    5. Display the complete postmortem content in chat for immediate review
     
     **WORKFLOW for generating postmortems:**
     1. First, use generate_postmortem_content to create the postmortem content based on incident and Jira data
-    2. Then, use save_postmortem with the generated content to save it to a file
+    2. Then, use save_postmortem with the generated content to upload it to GCP Cloud Storage
     
     After saving the postmortem:
     1. Display the full postmortem content in your response
-    2. Mention the filename and location where it was saved
-    3. Let the user know the file is available for download
+    2. Provide the downloadable GCP link with expiration information
+    3. Mention the filename and GCP bucket location
+    4. Note that the download link is valid for 24 hours
     
     The generate_postmortem_content tool will automatically create a comprehensive postmortem with these sections:
     - Executive Summary
@@ -39,7 +40,13 @@ writer = Agent(
     - Action Items
     - Recommendations
     
-    Always end your response by displaying the complete postmortem content and providing download information.
+    **Download Link Information:**
+    - Files are stored in GCP Cloud Storage for reliable access
+    - Download links are signed URLs valid for 24 hours
+    - If GCP storage is unavailable, files fall back to local storage
+    - Always provide both the content in chat AND the download link
+    
+    Always end your response by displaying the complete postmortem content and providing the downloadable link.
     """,
     tools=[generate_postmortem_content, save_postmortem]
 ) 

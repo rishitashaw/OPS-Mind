@@ -4,6 +4,9 @@ pandas>=1.5.0
 numpy>=1.21.0
 python-dotenv>=1.0.0
 
+# GCP Cloud Storage for postmortem files
+google-cloud-storage>=2.10.0
+
 # Real-time connectors
 aiohttp>=3.9.0
 

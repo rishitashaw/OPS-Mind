@@ -70,10 +70,12 @@ root = Agent(
     
     📋 **Postmortem Features:**
     - ✅ Full content displayed in chat for immediate review
-    - 📁 Saved as markdown file in ./output/ directory
-    - 💾 File available for download with timestamp-based filename
-    - 🔗 Includes relevant Jira ticket references and insights
+    - ☁️ Saved to GCP Cloud Storage with downloadable links
+    - 🔗 Signed download URLs valid for 24 hours
+    - 📁 Fallback to local storage if GCP unavailable
+    - 🔒 Secure access with automatic link expiration
     - 📊 Timeline analysis using Jira changelog data
+    - 🎯 Includes relevant Jira ticket references and insights
     
     What would you like me to help you with today?
     """,

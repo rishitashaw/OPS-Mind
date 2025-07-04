@@ -28,13 +28,13 @@ gcloud config set project YOUR_PROJECT_ID
 
 ```bash
 # Simple deployment with web UI
-./deploy-adk.sh -p YOUR_PROJECT_ID
+./deploy.sh -p YOUR_PROJECT_ID
 
 # Or deploy and make public
-./deploy-adk.sh -p YOUR_PROJECT_ID --public
+./deploy.sh -p YOUR_PROJECT_ID --public
 
 # Or deploy without UI (API only)
-./deploy-adk.sh -p YOUR_PROJECT_ID --no-ui
+./deploy.sh -p YOUR_PROJECT_ID --no-ui
 ```
 
 That's it! 🎉 Your OpsMind agent is now live on Google Cloud Run.
@@ -101,7 +101,7 @@ gcloud run services describe opsmind-service --region=us-central1
 
 ```bash
 # Redeploy after changes
-./deploy-adk.sh -p YOUR_PROJECT_ID -f
+./deploy.sh -p YOUR_PROJECT_ID -f
 ```
 
 ## 💡 Why ADK Deployment?
@@ -130,7 +130,7 @@ As shown in the [Medium tutorial](https://timtech4u.medium.com/building-and-depl
 export DEBUG=true
 
 # Run with verbose output
-./deploy-adk.sh -p YOUR_PROJECT_ID --force
+./deploy.sh -p YOUR_PROJECT_ID --force
 ```
 
 ---

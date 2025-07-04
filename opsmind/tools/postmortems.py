@@ -7,7 +7,8 @@ from datetime import datetime
 from typing import Any, Dict
 
 from google.adk.tools.tool_context import ToolContext
-from opsmind.config import OUTPUT_DIR, logger
+from opsmind.config import OUTPUT_DIR, logger, GCP_STORAGE_ENABLED
+from opsmind.utils import upload_file_to_gcp, generate_download_link, list_postmortem_files_in_gcp
 
 def generate_postmortem_content(
     tool_context: ToolContext,
@@ -165,35 +166,143 @@ def save_postmortem(
     tool_context: ToolContext,
     incident_id: str,
     postmortem_content: str
-) -> Dict[str, str]:
-    """Save postmortem to markdown file and return content for display"""
+) -> Dict[str, Any]:
+    """Save postmortem to GCP Cloud Storage and return download link"""
+    try:
+        filename = f"postmortem_{incident_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        
+        if GCP_STORAGE_ENABLED:
+            # Upload to GCP Cloud Storage
+            upload_result = upload_file_to_gcp(
+                file_content=postmortem_content,
+                filename=filename,
+                content_type="text/markdown"
+            )
+            
+            if upload_result["status"] == "success":
+                # Generate download link
+                download_result = generate_download_link(
+                    blob_path=upload_result["blob_path"],
+                    expiration_hours=24
+                )
+                
+                if download_result["status"] == "success":
+                    logger.info(f"Saved postmortem to GCP Storage: {filename}")
+                    return {
+                        "status": "success",
+                        "filename": filename,
+                        "download_url": download_result["download_url"],
+                        "download_expiration": download_result["expiration_time"],
+                        "bucket_name": upload_result["bucket_name"],
+                        "blob_path": upload_result["blob_path"],
+                        "content": postmortem_content,
+                        "message": f"Postmortem saved to GCP Storage and available for download"
+                    }
+                else:
+                    logger.error(f"Failed to generate download link: {download_result['message']}")
+                    return {
+                        "status": "success",
+                        "filename": filename,
+                        "download_url": None,
+                        "bucket_name": upload_result["bucket_name"],
+                        "blob_path": upload_result["blob_path"],
+                        "content": postmortem_content,
+                        "message": f"Postmortem saved to GCP Storage but download link generation failed"
+                    }
+            else:
+                logger.error(f"Failed to upload to GCP Storage: {upload_result['message']}")
+                # Fallback to local storage
+                return _save_postmortem_local(filename, postmortem_content)
+        else:
+            # GCP Storage disabled, use local storage
+            return _save_postmortem_local(filename, postmortem_content)
+            
+    except Exception as e:
+        logger.error(f"Error saving postmortem: {e}")
+        return {"status": "error", "message": str(e)}
+
+def _save_postmortem_local(filename: str, postmortem_content: str) -> Dict[str, Any]:
+    """Fallback function to save postmortem locally"""
     try:
         output_dir = Path(OUTPUT_DIR)
         output_dir.mkdir(exist_ok=True)
         
-        filename = f"postmortem_{incident_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
         filepath = output_dir / filename
         
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(postmortem_content)
         
-        logger.info(f"Saved postmortem to {filepath}")
+        logger.info(f"Saved postmortem locally to {filepath}")
         return {
             "status": "success", 
             "filepath": str(filepath),
             "filename": filename,
+            "download_url": None,
             "content": postmortem_content,
-            "message": f"Postmortem saved to {filename} and ready for display"
+            "message": f"Postmortem saved locally to {filename} (GCP Storage unavailable)"
         }
     except Exception as e:
-        logger.error(f"Error saving postmortem: {e}")
+        logger.error(f"Error saving postmortem locally: {e}")
         return {"status": "error", "message": str(e)}
 
 def list_postmortem_files(
     tool_context: ToolContext,
     show_content: bool = False
 ) -> Dict[str, Any]:
-    """List existing postmortem files and optionally show their content"""
+    """List existing postmortem files from GCP storage (and local as fallback)"""
+    try:
+        if GCP_STORAGE_ENABLED:
+            # List files from GCP Storage
+            gcp_result = list_postmortem_files_in_gcp()
+            
+            if gcp_result["status"] == "success":
+                files_info = gcp_result["files"]
+                
+                # If show_content is requested, fetch content for each file
+                if show_content:
+                    from opsmind.utils import get_file_content_from_gcp
+                    for file_info in files_info:
+                        content_result = get_file_content_from_gcp(file_info["blob_path"])
+                        if content_result["status"] == "success":
+                            file_info["content"] = content_result["content"]
+                        else:
+                            file_info["content"] = f"Error loading content: {content_result['message']}"
+                
+                # Generate download links for each file
+                for file_info in files_info:
+                    download_result = generate_download_link(
+                        blob_path=file_info["blob_path"],
+                        expiration_hours=24
+                    )
+                    if download_result["status"] == "success":
+                        file_info["download_url"] = download_result["download_url"]
+                        file_info["download_expiration"] = download_result["expiration_time"]
+                    else:
+                        file_info["download_url"] = None
+                        file_info["download_error"] = download_result["message"]
+                
+                return {
+                    "status": "success",
+                    "files": files_info,
+                    "count": len(files_info),
+                    "source": "gcp_storage",
+                    "bucket_name": gcp_result.get("bucket_name"),
+                    "message": f"Found {len(files_info)} postmortem files in GCP Storage"
+                }
+            else:
+                logger.warning(f"Failed to list GCP files: {gcp_result['message']}")
+                # Fallback to local storage
+                return _list_postmortem_files_local(show_content)
+        else:
+            # GCP Storage disabled, use local storage
+            return _list_postmortem_files_local(show_content)
+            
+    except Exception as e:
+        logger.error(f"Error listing postmortem files: {e}")
+        return {"status": "error", "message": str(e)}
+
+def _list_postmortem_files_local(show_content: bool = False) -> Dict[str, Any]:
+    """Fallback function to list postmortem files locally"""
     try:
         output_dir = Path(OUTPUT_DIR)
         if not output_dir.exists():
@@ -207,7 +316,8 @@ def list_postmortem_files(
                 "filename": filepath.name,
                 "filepath": str(filepath),
                 "size": filepath.stat().st_size,
-                "modified": datetime.fromtimestamp(filepath.stat().st_mtime).isoformat()
+                "modified": datetime.fromtimestamp(filepath.stat().st_mtime).isoformat(),
+                "download_url": None  # No download URL for local files
             }
             
             if show_content:
@@ -220,8 +330,9 @@ def list_postmortem_files(
             "status": "success",
             "files": files_info,
             "count": len(files_info),
-            "message": f"Found {len(files_info)} postmortem files"
+            "source": "local_storage",
+            "message": f"Found {len(files_info)} postmortem files locally (GCP Storage unavailable)"
         }
     except Exception as e:
-        logger.error(f"Error listing postmortem files: {e}")
+        logger.error(f"Error listing local postmortem files: {e}")
         return {"status": "error", "message": str(e)} 

@@ -25,6 +25,13 @@ JIRA_MAX_RETRIES = int(os.getenv("JIRA_MAX_RETRIES", "3"))
 JIRA_RETRY_DELAY = int(os.getenv("JIRA_RETRY_DELAY", "5"))
 JIRA_ENABLED = os.getenv("JIRA_ENABLED", "FALSE").upper() == "TRUE"
 
+# GCP Cloud Storage configuration for postmortem files
+GCP_BUCKET_NAME = os.getenv("GCP_BUCKET_NAME", "opsmind-postmortems")
+GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "")
+GCP_STORAGE_ENABLED = os.getenv("GCP_STORAGE_ENABLED", "TRUE").upper() == "TRUE"
+GCP_POSTMORTEM_FOLDER = os.getenv("GCP_POSTMORTEM_FOLDER", "postmortems")
+GCP_FILE_EXPIRATION_DAYS = int(os.getenv("GCP_FILE_EXPIRATION_DAYS", "30"))
+
 # Project paths
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 DATA_DIR = PROJECT_ROOT / "opsmind" / "data"
@@ -119,6 +126,15 @@ def validate_config() -> bool:
             logger.warning("JIRA_PROJECT_KEYS not set but Jira is enabled")
             valid = False
     
+    # Validate GCP storage configuration if enabled
+    if GCP_STORAGE_ENABLED:
+        if not GCP_BUCKET_NAME:
+            logger.warning("GCP_BUCKET_NAME not set but GCP storage is enabled")
+            valid = False
+        if not GCP_PROJECT_ID:
+            logger.warning("GCP_PROJECT_ID not set but GCP storage is enabled")
+            valid = False
+    
     if valid:
         logger.info("Configuration validation passed")
     else:
@@ -142,6 +158,17 @@ def get_jira_config() -> dict:
     }
 
 
+def get_gcp_config() -> dict:
+    """Get GCP Cloud Storage configuration"""
+    return {
+        "bucket_name": GCP_BUCKET_NAME,
+        "project_id": GCP_PROJECT_ID,
+        "enabled": GCP_STORAGE_ENABLED,
+        "postmortem_folder": GCP_POSTMORTEM_FOLDER,
+        "file_expiration_days": GCP_FILE_EXPIRATION_DAYS
+    }
+
+
 # Export all configuration variables
 __all__ = [
     "MODEL_NAME",
@@ -156,6 +183,11 @@ __all__ = [
     "JIRA_MAX_RETRIES",
     "JIRA_RETRY_DELAY",
     "JIRA_ENABLED",
+    "GCP_BUCKET_NAME",
+    "GCP_PROJECT_ID",
+    "GCP_STORAGE_ENABLED",
+    "GCP_POSTMORTEM_FOLDER",
+    "GCP_FILE_EXPIRATION_DAYS",
     "PROJECT_ROOT",
     "DATA_DIR",
     "OUTPUT_DIR",
@@ -167,5 +199,6 @@ __all__ = [
     "logger",
     "setup_logging",
     "validate_config",
-    "get_jira_config"
+    "get_jira_config",
+    "get_gcp_config"
 ] 
