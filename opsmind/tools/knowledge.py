@@ -232,11 +232,11 @@ async def get_historical_patterns(
     time_period_days: int = 365
 ) -> Dict[str, Any]:
     """
-    Get simple historical patterns from the knowledge base
+    Get historical patterns from the knowledge base
     
     Args:
         pattern_type: Type of patterns to analyze (all, incidents, jira)
-        time_period_days: Time period to analyze (simplified)
+        time_period_days: Time period to analyze (defaults to analyzing all available data)
     
     Returns:
         Dictionary with historical patterns
@@ -251,12 +251,12 @@ async def get_historical_patterns(
             "patterns": {}
         }
         
-        # Simple pattern analysis
+        # Analyze patterns based on type
         if pattern_type in ["all", "incidents"]:
-            patterns["patterns"]["incidents"] = _analyze_incident_patterns_simple()
+            patterns["patterns"]["incidents"] = _analyze_incident_patterns_comprehensive()
         
         if pattern_type in ["all", "jira"]:
-            patterns["patterns"]["jira"] = _analyze_jira_patterns_simple()
+            patterns["patterns"]["jira"] = _analyze_jira_patterns_comprehensive()
         
         return patterns
         
@@ -487,43 +487,105 @@ def _generate_simple_summary(results: Dict[str, Any]) -> str:
     return summary
 
 
-def _analyze_incident_patterns_simple() -> Dict[str, Any]:
-    """Simple incident pattern analysis"""
+def _analyze_incident_patterns_comprehensive() -> Dict[str, Any]:
+    """Enhanced incident pattern analysis with proper date handling"""
     try:
         incidents_df = load_incident_data()
         if incidents_df.empty:
-            return {"error": "No incident data available"}
+            return {
+                "error": "No incident data available",
+                "message": "The knowledge base contains no incident data to analyze patterns."
+            }
         
-        # Basic counts
+        # Try to parse dates to get actual data range
+        try:
+            incidents_df['opened_at_dt'] = pd.to_datetime(incidents_df['opened_at'], format='%d/%m/%Y %H:%M', errors='coerce')
+            valid_dates = incidents_df[incidents_df['opened_at_dt'].notna()]
+            
+            if not valid_dates.empty:
+                start_date = valid_dates['opened_at_dt'].min()
+                end_date = valid_dates['opened_at_dt'].max()
+                date_range = f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+                total_days = (end_date - start_date).days
+            else:
+                date_range = "Unable to determine date range"
+                total_days = 0
+        except Exception:
+            date_range = "Unable to determine date range"
+            total_days = 0
+        
+        # Basic pattern analysis
         patterns = {
             "total_incidents": len(incidents_df),
-            "top_categories": incidents_df['category'].value_counts().head(5).to_dict() if 'category' in incidents_df.columns else {},
-            "top_priorities": incidents_df['priority'].value_counts().head(5).to_dict() if 'priority' in incidents_df.columns else {}
+            "unique_incidents": incidents_df['number'].nunique(),
+            "data_range": date_range,
+            "total_days": total_days,
+            "top_categories": incidents_df['category'].value_counts().head(10).to_dict() if 'category' in incidents_df.columns else {},
+            "priority_distribution": incidents_df['priority'].value_counts().to_dict() if 'priority' in incidents_df.columns else {},
+            "state_distribution": incidents_df['incident_state'].value_counts().to_dict() if 'incident_state' in incidents_df.columns else {},
+            "message": f"Successfully analyzed {len(incidents_df)} incident records covering {total_days} days of historical data."
         }
         
         return patterns
         
     except Exception as e:
-        return {"error": str(e)}
+        logger.error(f"Error in incident pattern analysis: {e}")
+        return {
+            "error": str(e),
+            "message": "An error occurred while analyzing incident patterns."
+        }
 
 
-def _analyze_jira_patterns_simple() -> Dict[str, Any]:
-    """Simple JIRA pattern analysis"""
+def _analyze_jira_patterns_comprehensive() -> Dict[str, Any]:
+    """Enhanced JIRA pattern analysis with proper date handling"""
     try:
         jira_data = load_jira_data()
         issues_df = jira_data.get('issues', pd.DataFrame())
+        comments_df = jira_data.get('comments', pd.DataFrame())
+        changelog_df = jira_data.get('changelog', pd.DataFrame())
         
         if issues_df.empty:
-            return {"error": "No JIRA data available"}
+            return {
+                "error": "No JIRA data available",
+                "message": "The knowledge base contains no JIRA data to analyze patterns."
+            }
         
-        # Basic counts
+        # Try to parse dates to get actual data range
+        try:
+            issues_df['created_dt'] = pd.to_datetime(issues_df['created'], errors='coerce')
+            valid_dates = issues_df[issues_df['created_dt'].notna()]
+            
+            if not valid_dates.empty:
+                start_date = valid_dates['created_dt'].min()
+                end_date = valid_dates['created_dt'].max()
+                date_range = f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+                total_days = (end_date - start_date).days
+            else:
+                date_range = "Unable to determine date range"
+                total_days = 0
+        except Exception:
+            date_range = "Unable to determine date range"
+            total_days = 0
+        
+        # Basic pattern analysis
         patterns = {
             "total_issues": len(issues_df),
-            "top_statuses": issues_df['status.name'].value_counts().head(5).to_dict() if 'status.name' in issues_df.columns else {},
-            "top_priorities": issues_df['priority.name'].value_counts().head(5).to_dict() if 'priority.name' in issues_df.columns else {}
+            "data_range": date_range,
+            "total_days": total_days,
+            "top_statuses": issues_df['status.name'].value_counts().head(10).to_dict() if 'status.name' in issues_df.columns else {},
+            "top_priorities": issues_df['priority.name'].value_counts().head(10).to_dict() if 'priority.name' in issues_df.columns else {},
+            "issue_types": issues_df['issuetype.name'].value_counts().to_dict() if 'issuetype.name' in issues_df.columns else {},
+            "projects": issues_df['project.name'].value_counts().to_dict() if 'project.name' in issues_df.columns else {},
+            "comments_count": len(comments_df),
+            "changelog_count": len(changelog_df),
+            "message": f"Successfully analyzed {len(issues_df)} JIRA issues, {len(comments_df)} comments, and {len(changelog_df)} changelog entries covering {total_days} days of historical data."
         }
         
         return patterns
         
     except Exception as e:
-        return {"error": str(e)} 
+        logger.error(f"Error in JIRA pattern analysis: {e}")
+        return {
+            "error": str(e),
+            "message": "An error occurred while analyzing JIRA patterns."
+        } 
