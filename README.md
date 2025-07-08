@@ -1,17 +1,19 @@
-# OpsMind - Autonomous Incident-to-Insight Assistant
+# OpsMind - SRE/DevOps Knowledge Repository & Incident Management Assistant
 
-OpsMind is an AI-powered incident management system built with Google's Agent Development Kit (ADK). It processes incident logs, learns from historical data, and automatically generates comprehensive postmortem documents with enhanced Jira integration.
+OpsMind is an AI-powered SRE/DevOps knowledge repository and incident management system built with Google's Agent Development Kit (ADK). It serves as a comprehensive knowledge base that can answer any DevOps/SRE question using historical data from incidents, JIRA issues, comments, and changelog. When the knowledge base doesn't have sufficient information, it automatically falls back to web search for current information.
 
 ## 🏗️ Architecture
 
 OpsMind uses a **multi-agent system** with integrated safety guardrails:
 
-1. **Listener Agent** - Watches incident logs and structures data
-2. **Synthesizer Agent** - Uses RAG to analyze incidents with historical context  
-3. **Writer Agent** - Generates markdown postmortem documents
-4. **Pipeline Agent** - Orchestrates the flow between agents
-5. **Root Agent** - Main user interface and entry point
-6. **Guardrail System** - Comprehensive safety framework with content filtering, rate limiting, and security validation
+1. **Root Agent** - SRE/DevOps knowledge repository and main user interface
+2. **Knowledge Repository Tools** - Answer questions using comprehensive historical data
+3. **Search Agent** - Dedicated Google Search capability for current information fallback
+4. **Listener Agent** - Watches incident logs and structures data
+5. **Synthesizer Agent** - Uses RAG to analyze incidents with historical context  
+6. **Writer Agent** - Generates markdown postmortem documents
+7. **Pipeline Agent** - Orchestrates the flow between agents
+8. **Guardrail System** - Comprehensive safety framework with content filtering, rate limiting, and security validation
 
 ## 🛡️ Safety & Security Features
 
@@ -161,31 +163,88 @@ OpsMind leverages multiple data sources for comprehensive incident analysis:
 - **Multi-source Correlation**: Links incidents with Jira issues
 - **Pattern Recognition**: Identifies recurring issues and solutions
 - **Automated Insights**: Generates actionable recommendations
+- **Smart Fallback System**: Automatically searches web when knowledge base lacks information
+
+## 🧠 Intelligent Knowledge System
+
+OpsMind operates as a comprehensive knowledge repository with intelligent fallback:
+
+### **Knowledge Base First**
+1. **Question Analysis**: Extracts key DevOps/SRE terms from your question
+2. **Multi-source Search**: Searches across incidents, JIRA issues, comments, changelog
+3. **Evidence Compilation**: Finds relevant historical solutions and patterns
+4. **Confidence Assessment**: Evaluates the quality and relevance of found information
+
+### **Web Search Fallback**
+When knowledge base information is insufficient (confidence < 30%), OpsMind automatically:
+1. **Delegates to Search Agent**: Uses Google's built-in search via dedicated search agent
+2. **Current Information**: Finds up-to-date solutions and best practices
+3. **Source Verification**: Prioritizes authoritative DevOps/SRE sources
+4. **Combined Results**: Merges historical data with current information
+
+### **Example Workflow**
+```
+User: "How do I troubleshoot Kubernetes pod startup failures?"
+↓
+1. Knowledge Base Search: Finds 15 historical incidents/issues
+2. Confidence Check: High confidence (0.8) - sufficient historical data
+3. Response: Historical solutions + patterns from your organization
+```
+
+```
+User: "What's new in Kubernetes 1.29 networking?"
+↓
+1. Knowledge Base Search: Finds 2 general networking issues
+2. Confidence Check: Low confidence (0.2) - insufficient current data
+3. Web Search Fallback: Searches for Kubernetes 1.29 networking updates
+4. Response: Combined historical context + current information
+```
 
 ## 💬 Sample Prompts
 
 Once OpsMind is running, try these prompts:
 
-### Basic Operations
+### Knowledge Repository Queries
 ```
-"Process recent incidents"
-"Summarize incident INC0000045" 
-"Generate postmortem for INC0000045"
+"Why am I getting 502 errors from my load balancer?"
+
+"How do I troubleshoot high CPU usage in production?"
+
+"What causes database connection timeouts?"
+
+"How to resolve Kubernetes pod crash loops?"
+
+"Find similar issues to: service discovery failing after deployment"
+
+"What are the most common causes of memory leaks?"
+
+"How was this resolved: Redis performance degradation"
+
+"Best practices for deployment rollbacks"
 ```
 
-### RAG-based Queries
+### Historical Analysis
 ```
-"Summarize the incident where the database connection failed on March 12."
+"Show patterns in critical incidents over the past year"
 
-"What resolution pattern was used most frequently for 500 errors?"
+"What are the most common failure types in our infrastructure?"
 
-"Compare two Jira tickets tagged with 'critical' — what's the common failure mode?"
+"Analyze resolution times for network-related issues"
 
-"Generate a postmortem for the most recent incident involving Kubernetes pods."
+"Find trends in database performance problems"
 
-"Find incidents with similar symptoms to JIRA-12345"
+"Search knowledge base for Docker configuration issues"
+```
 
-"What are the common causes of high-priority database incidents?"
+### Incident Management
+```
+"Generate postmortem for incident INC0000045"
+
+"Correlate incident INC0000067 with JIRA activity"
+
+"Show timeline for incident with related changes"
+
+"Find JIRA discussions about specific incidents"
 ```
 
 ## 🔧 Agent Details
@@ -249,6 +308,7 @@ ops/
 │   │   │   ├── synthesizer.py        # RAG-based analysis
 │   │   │   ├── writer.py             # Postmortem generation
 │   │   │   ├── pipeline.py           # Agent orchestration
+│   │   │   ├── search_agent.py       # Google search capability
 │   │   │   ├── root.py               # Main user interface
 │   │   │   └── guardrails.py         # Guardrail agent implementation
 │   │   ├── safety/            # Safety and security framework
@@ -261,8 +321,7 @@ ops/
 │   │   ├── connectors/        # Real-time data connectors
 │   │   │   ├── __init__.py           # Connector exports
 │   │   │   ├── base.py               # Base connector interface
-│   │   │   ├── jira_connector.py     # Jira real-time connector
-│   │   │   ├── jira.py               # Jira data processing
+│   │   │   ├── jira.py              # Jira real-time connector
 │   │   │   └── manager.py            # Multi-connector management
 │   │   ├── datasets/          # Data files (download from Kaggle)
 │   │   │   ├── incidents/     # IT incident logs
@@ -279,6 +338,7 @@ ops/
 │   │   ├── __init__.py        # Tool exports
 │   │   ├── guardrail_tools.py # Safety and security tools
 │   │   ├── incidents.py       # Incident processing tools
+│   │   ├── knowledge.py       # Knowledge repository tools
 │   │   └── postmortems.py     # Postmortem generation tools
 │   ├── utils/                  # Utility functions
 │   │   ├── __init__.py        # Utils exports

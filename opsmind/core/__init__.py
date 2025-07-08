@@ -6,6 +6,7 @@ from .agents import (
     synthesizer, 
     writer,
     pipeline,
+    search,
     root,
 )
 
@@ -27,6 +28,7 @@ __all__ = [
     'synthesizer',
     'writer', 
     'pipeline',
+    'search',
     'root',
     'guardrail'
 ] 
