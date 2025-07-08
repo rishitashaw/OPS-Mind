@@ -10,7 +10,8 @@ from .knowledge import (
     get_historical_patterns
 )
 # Context tools moved to context module
-# Guardrail tools moved to safety module
+# Guardrail tools
+from .guardrail import with_guardrail, check_guardrails_health, initialize_guardrails
 
 __all__ = [
     # Knowledge Repository Tools
@@ -24,4 +25,8 @@ __all__ = [
     'generate_postmortem_content',
     'save_postmortem',
     'list_postmortem_files',
+    # Guardrail Tools
+    'with_guardrail',
+    'check_guardrails_health',
+    'initialize_guardrails',
 ] 

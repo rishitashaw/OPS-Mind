@@ -1,17 +1,82 @@
 """
-Safety and Guardrail Tools for OpsMind - Clean MVP Version
+Simplified Guardrail Tools for OpsMind
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Callable
+from functools import wraps
 from google.adk.tools.tool_context import ToolContext
 from opsmind.config import logger
 from opsmind.core.safety import (
     get_guardrail_manager, 
     initialize_default_guardrails,
+    with_guardrails,
 )
 
 
-# === CORE MONITORING FUNCTIONS ===
+def with_guardrail(func: Callable) -> Callable:
+    """
+    Simplified decorator that applies guardrails to any function.
+    
+    This decorator automatically:
+    - Validates input data
+    - Applies rate limiting
+    - Ensures UI content escaping
+    - Blocks execution if strict guardrails fail
+    """
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            # Initialize guardrails if not already done
+            manager = get_guardrail_manager()
+            if not manager.guardrails:
+                initialize_default_guardrails()
+            
+            # Create validation context
+            context = {
+                'function_name': func.__name__,
+                'args': args,
+                'kwargs': kwargs,
+                'data': kwargs.get('data', {})
+            }
+            
+            # Run all guardrails
+            result = await manager.check_all(context)
+            
+            # Block if strict failures
+            if result['status'] == 'blocked':
+                logger.warning(f"Guardrails blocked execution for {func.__name__}")
+                error_msg = f"Guardrails blocked execution: {result['failed']} failed checks"
+                if hasattr(func, '__annotations__') and func.__annotations__.get('return') == Dict[str, Any]:
+                    return {
+                        'status': 'error',
+                        'safe': False,
+                        'message': error_msg
+                    }
+                else:
+                    raise RuntimeError(error_msg)
+            
+            # Log any non-blocking failures
+            if result['failed'] > 0:
+                logger.warning(f"Guardrail warnings for {func.__name__}: {result['failed']} non-strict checks failed")
+            
+            # Execute function if guardrails pass
+            return await func(*args, **kwargs)
+            
+        except Exception as e:
+            logger.error(f"Guardrail error for {func.__name__}: {e}")
+            if hasattr(func, '__annotations__') and func.__annotations__.get('return') == Dict[str, Any]:
+                return {
+                    'status': 'error',
+                    'safe': False,
+                    'message': f"Guardrail error: {str(e)}"
+                }
+            else:
+                raise
+    
+    return wrapper
+
+
+# === ESSENTIAL MONITORING FUNCTIONS ===
 
 def check_guardrails_health(tool_context: ToolContext) -> Dict[str, Any]:
     """Check comprehensive status of all guardrails"""
@@ -23,20 +88,11 @@ def check_guardrails_health(tool_context: ToolContext) -> Dict[str, Any]:
         
         stats = manager.get_stats()
         
-        # Get rate limiter status
-        rate_status = "not_configured"
-        rate_limiter = manager.guardrails.get('rate_limiter')
-        if rate_limiter and hasattr(rate_limiter, 'request_times'):
-            current_requests = len(getattr(rate_limiter, 'request_times', []))
-            max_requests = getattr(rate_limiter, 'max_requests', 0)
-            rate_status = f"{current_requests}/{max_requests}"
-        
         return {
             "status": "success",
             "total_guardrails": stats["total_guardrails"],
             "enabled_guardrails": stats["enabled_guardrails"],
             "guardrail_checks": stats["guardrail_checks"],
-            "rate_limits": rate_status,
             "safety_status": "healthy" if stats["enabled_guardrails"] > 0 else "no_guardrails",
             "message": f"Health check complete. {stats['enabled_guardrails']} guardrails enabled."
         }
@@ -79,88 +135,6 @@ def get_system_resources(tool_context: ToolContext) -> Dict[str, Any]:
         }
 
 
-# === CORE VALIDATION FUNCTIONS ===
-
-def validate_input(tool_context: ToolContext, data: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate input data through all guardrails"""
-    try:
-        manager = get_guardrail_manager()
-        
-        if not manager.guardrails:
-            initialize_default_guardrails()
-        
-        # Create validation context
-        context = {
-            'function_name': 'validate_input',
-            'data': data
-        }
-        
-        # Run validation
-        import asyncio
-        result = asyncio.run(manager.check_all(context))
-        
-        return {
-            'status': 'success',
-            'validation_result': result['status'],
-            'passed': result['passed'],
-            'failed': result['failed'],
-            'errors': result['errors'],
-            'safe': result['status'] == 'allowed',
-            'message': f"Input validation: {result['status']} - {result['passed']} passed, {result['failed']} failed"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error validating input: {e}")
-        return {
-            'status': 'error',
-            'safe': False,
-            'message': f"Input validation failed: {str(e)}"
-        }
-
-
-def escape_ui_content(tool_context: ToolContext, content: str) -> Dict[str, Any]:
-    """Escape content for safe UI display"""
-    try:
-        manager = get_guardrail_manager()
-        
-        if not manager.guardrails:
-            initialize_default_guardrails()
-        
-        # Create escaping context
-        context = {
-            'function_name': 'escape_ui_content',
-            'data': {'content': content}
-        }
-        
-        # Run escaping
-        import asyncio
-        result = asyncio.run(manager.check_all(context))
-        
-        escaped_content = context['data']['content']
-        was_modified = escaped_content != content
-        
-        return {
-            'status': 'success',
-            'original_content': content,
-            'escaped_content': escaped_content,
-            'was_modified': was_modified,
-            'safe': True,
-            'message': f"UI content {'escaped' if was_modified else 'safe'}"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error escaping UI content: {e}")
-        return {
-            'status': 'error',
-            'original_content': content,
-            'escaped_content': content,
-            'safe': False,
-            'message': f"UI content escaping failed: {str(e)}"
-        }
-
-
-# === SETUP FUNCTION ===
-
 def initialize_guardrails(tool_context: ToolContext) -> Dict[str, Any]:
     """Initialize the guardrail system"""
     try:
@@ -185,7 +159,7 @@ def initialize_guardrails(tool_context: ToolContext) -> Dict[str, Any]:
         }
 
 
-# === SIMPLIFIED AGENT HELPERS ===
+# === SIMPLIFIED MONITORING HELPERS ===
 
 def monitor_safety_status(tool_context: ToolContext) -> str:
     """Simple safety status for agent use"""

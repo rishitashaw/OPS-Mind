@@ -10,6 +10,7 @@ import pandas as pd
 from google.adk.tools.tool_context import ToolContext
 from opsmind.config import logger
 from opsmind.utils import safe_json_loads
+from opsmind.tools.guardrail import with_guardrail
 from opsmind.data.loader import (
     load_incident_data,
     load_jira_data,
@@ -19,7 +20,8 @@ from opsmind.data.loader import (
     get_jira_issue_details
 )
 
-def process_incident_stream(
+@with_guardrail
+async def process_incident_stream(
     tool_context: ToolContext,
     incident_data: str
 ) -> Dict[str, str]:
@@ -34,7 +36,8 @@ def process_incident_stream(
         logger.error(f"Error processing incident: {e}")
         return {"status": "error", "message": str(e)}
 
-def create_incident_summary(
+@with_guardrail
+async def create_incident_summary(
     tool_context: ToolContext,
     incident_id: str,
     summary_text: str
@@ -51,7 +54,8 @@ def create_incident_summary(
     logger.info(f"Created summary for incident {incident_id}")
     return {"status": "success", "incident_id": incident_id}
 
-def search_incidents(
+@with_guardrail
+async def search_incidents(
     tool_context: ToolContext,
     search_term: str = "",
     limit: int = 50
@@ -112,7 +116,8 @@ def search_incidents(
         logger.error(f"Error searching incidents: {e}")
         return {"incidents": [], "total_count": 0, "message": f"Error: {str(e)}"}
 
-def correlate_incident_with_jira(
+@with_guardrail
+async def correlate_incident_with_jira(
     tool_context: ToolContext,
     incident_id: str,
     search_keywords: Optional[List[str]] = None

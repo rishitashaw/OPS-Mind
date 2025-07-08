@@ -1,16 +1,19 @@
-"""
-Context and RAG tools for OpsMind
-"""
+"""Context and RAG tools for OpsMind"""
+
 import pandas as pd
-import numpy as np
 from typing import Any, Dict
 
+import numpy as np
 from google.adk.tools.tool_context import ToolContext
-from opsmind.data import load_incident_data, load_jira_data
-from opsmind.config import logger
-from opsmind.utils import safe_get
 
-def get_incident_context(
+from opsmind.config import logger
+from opsmind.data import load_incident_data, load_jira_data
+from opsmind.utils import safe_get
+from opsmind.tools.guardrail import with_guardrail
+
+
+@with_guardrail
+async def get_incident_context(
     tool_context: ToolContext,
     query: str
 ) -> Dict[str, Any]:
@@ -20,7 +23,7 @@ def get_incident_context(
         if "incident_memory" not in tool_context.state:
             incident_df = load_incident_data()
             jira_data = load_jira_data()
-            
+
             # Create simple context from incident data
             incident_context = []
             for _, row in incident_df.head(100).iterrows():  # Limit for MVP
@@ -36,10 +39,10 @@ def get_incident_context(
                     "description": safe_get(row, "description")
                 }
                 incident_context.append(context_entry)
-            
+
             # Enhanced Jira context with multiple data sources
             jira_context = []
-            
+
             # Process Jira issues
             issues_df = jira_data.get('issues', pd.DataFrame())
             for _, row in issues_df.head(100).iterrows():  # Limit for MVP
@@ -57,7 +60,7 @@ def get_incident_context(
                     "updated": safe_get(row, "updated")
                 }
                 jira_context.append(context_entry)
-            
+
             # Process Jira comments
             comments_df = jira_data.get('comments', pd.DataFrame())
             for _, row in comments_df.head(50).iterrows():  # Limit comments
@@ -70,7 +73,7 @@ def get_incident_context(
                     "updated": safe_get(row, "updated")
                 }
                 jira_context.append(context_entry)
-            
+
             # Process Jira changelog
             changelog_df = jira_data.get('changelog', pd.DataFrame())
             for _, row in changelog_df.head(50).iterrows():  # Limit changelog
@@ -84,7 +87,7 @@ def get_incident_context(
                     "created": safe_get(row, "created")
                 }
                 jira_context.append(context_entry)
-            
+
             # Process Jira issue links
             issuelinks_df = jira_data.get('issuelinks', pd.DataFrame())
             for _, row in issuelinks_df.head(50).iterrows():  # Limit links
@@ -96,19 +99,19 @@ def get_incident_context(
                     "direction": safe_get(row, "linkType.inward")
                 }
                 jira_context.append(context_entry)
-            
+
             # Combine all context
             all_context = incident_context + jira_context
             tool_context.state["incident_memory"] = all_context
-            logger.info(f"Loaded {len(incident_context)} incidents and {len(jira_context)} Jira items into memory")
-        
+            logger.info("Loaded %s incidents and %s Jira items into memory", len(incident_context), len(jira_context))
+
         # Enhanced context search based on query keywords
         context = tool_context.state["incident_memory"]
         relevant_context = []
-        
+
         query_lower = query.lower()
         query_keywords = query_lower.split()
-        
+
         for item in context:
             item_text = str(item).lower()
             # Score relevance based on keyword matches
@@ -117,10 +120,10 @@ def get_incident_context(
                 item_with_score = item.copy()
                 item_with_score["relevance_score"] = matches
                 relevant_context.append(item_with_score)
-        
+
         # Sort by relevance score and return top results
         relevant_context.sort(key=lambda x: x.get("relevance_score", 0), reverse=True)
-        
+
         return {
             "status": "success",
             "context": relevant_context[:15],  # Return top 15 most relevant items
@@ -129,5 +132,5 @@ def get_incident_context(
             "data_sources": ["incidents", "jira_issues", "jira_comments", "jira_changelog", "jira_links"]
         }
     except Exception as e:
-        logger.error(f"Error getting incident context: {e}")
-        return {"status": "error", "message": str(e)} 
+        logger.error("Error getting incident context: %s", e)
+        return {"status": "error", "message": str(e)}

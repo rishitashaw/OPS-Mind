@@ -9,8 +9,10 @@ from typing import Any, Dict
 from google.adk.tools.tool_context import ToolContext
 from opsmind.config import OUTPUT_DIR, logger, GCP_STORAGE_ENABLED
 from opsmind.utils import upload_file_to_gcp, generate_download_link, list_postmortem_files_in_gcp
+from opsmind.tools.guardrail import with_guardrail
 
-def generate_postmortem_content(
+@with_guardrail
+async def generate_postmortem_content(
     tool_context: ToolContext,
     incident_id: str
 ) -> Dict[str, str]:
@@ -20,7 +22,7 @@ def generate_postmortem_content(
         from opsmind.context import get_incident_context
         
         # Get incident context data
-        context_result = get_incident_context(tool_context, incident_id)
+        context_result = await get_incident_context(tool_context, incident_id)
         
         if context_result["status"] != "success":
             return {"status": "error", "message": f"Failed to get context for incident {incident_id}"}
@@ -162,7 +164,8 @@ Based on the available data and analysis:
         logger.error(f"Error generating postmortem content: {e}")
         return {"status": "error", "message": str(e)}
 
-def save_postmortem(
+@with_guardrail
+async def save_postmortem(
     tool_context: ToolContext,
     incident_id: str,
     postmortem_content: str
@@ -245,7 +248,8 @@ def _save_postmortem_local(filename: str, postmortem_content: str) -> Dict[str, 
         logger.error(f"Error saving postmortem locally: {e}")
         return {"status": "error", "message": str(e)}
 
-def list_postmortem_files(
+@with_guardrail
+async def list_postmortem_files(
     tool_context: ToolContext,
     show_content: bool = False
 ) -> Dict[str, Any]:

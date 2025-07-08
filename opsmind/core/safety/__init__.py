@@ -24,7 +24,7 @@ from .framework import (
     UIContentEscapingGuardrail,
 )
 
-from .agent import safety_agent
+
 
 __all__ = [
     # Core guardrail framework
@@ -43,6 +43,5 @@ __all__ = [
     "RateLimitGuardrail", 
     "UIContentEscapingGuardrail",
     
-    # Agent
-    "safety_agent",
+
 ] 

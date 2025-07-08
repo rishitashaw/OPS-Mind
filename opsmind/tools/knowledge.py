@@ -12,10 +12,12 @@ from opsmind.data.loader import (
 )
 from opsmind.context import get_incident_context
 from opsmind.utils import safe_get
+from opsmind.tools.guardrail import with_guardrail
 import pandas as pd
 
 
-def search_knowledge_base(
+@with_guardrail
+async def search_knowledge_base(
     tool_context: ToolContext,
     query: str,
     limit: int = 20
@@ -78,7 +80,8 @@ def search_knowledge_base(
         }
 
 
-def answer_devops_question(
+@with_guardrail
+async def answer_devops_question(
     tool_context: ToolContext,
     question: str,
     search_limit: int = 15
@@ -97,7 +100,7 @@ def answer_devops_question(
         logger.info(f"Answering DevOps question: {question}")
         
         # Search the knowledge base
-        search_results = search_knowledge_base(
+        search_results = await search_knowledge_base(
             tool_context=tool_context,
             query=question,
             limit=search_limit
@@ -147,7 +150,8 @@ def answer_devops_question(
         }
 
 
-def find_similar_issues(
+@with_guardrail
+async def find_similar_issues(
     tool_context: ToolContext,
     issue_description: str,
     limit: int = 10
@@ -166,7 +170,7 @@ def find_similar_issues(
         logger.info(f"Finding similar issues for: {issue_description}")
         
         # Search for similar incidents and issues
-        search_results = search_knowledge_base(
+        search_results = await search_knowledge_base(
             tool_context=tool_context,
             query=issue_description,
             limit=limit
@@ -221,7 +225,8 @@ def find_similar_issues(
         }
 
 
-def get_historical_patterns(
+@with_guardrail
+async def get_historical_patterns(
     tool_context: ToolContext,
     pattern_type: str = "all",
     time_period_days: int = 365
