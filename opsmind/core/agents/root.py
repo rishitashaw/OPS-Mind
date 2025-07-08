@@ -32,7 +32,7 @@ from opsmind.data.loader import (
     get_jira_issue_details
 )
 from opsmind.context import get_incident_context
-from opsmind.core.safety import (
+from opsmind.tools.guardrail import (
     check_guardrails_health,
     get_system_resources
 )

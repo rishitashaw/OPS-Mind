@@ -8,11 +8,7 @@ from google.adk.tools.tool_context import ToolContext
 from opsmind.config import logger
 from opsmind.data.loader import (
     load_incident_data,
-    load_jira_data,
-    search_jira_issues,
-    search_jira_comments,
-    search_jira_changelog,
-    get_jira_issue_details
+    load_jira_data
 )
 from opsmind.context import get_incident_context
 from opsmind.utils import safe_get
@@ -22,31 +18,23 @@ import pandas as pd
 def search_knowledge_base(
     tool_context: ToolContext,
     query: str,
-    limit: int = 20,
-    include_incidents: bool = True,
-    include_jira_issues: bool = True,
-    include_jira_comments: bool = True,
-    include_jira_changelog: bool = True
+    limit: int = 20
 ) -> Dict[str, Any]:
     """
-    Comprehensive search across the entire knowledge base for SRE/DevOps questions
+    Simple fuzzy search across the knowledge base
     
     Args:
-        query: The question or search terms
+        query: The search query
         limit: Maximum number of results per data source
-        include_incidents: Include incident data in search
-        include_jira_issues: Include JIRA issues in search
-        include_jira_comments: Include JIRA comments in search
-        include_jira_changelog: Include JIRA changelog in search
     
     Returns:
-        Dictionary with comprehensive search results from all data sources
+        Dictionary with search results from all data sources
     """
     try:
         logger.info(f"Searching knowledge base for: {query}")
         
-        # Extract key terms from the query
-        search_terms = _extract_search_terms(query)
+        # Simple search terms from query
+        search_terms = _extract_simple_terms(query)
         
         results = {
             "query": query,
@@ -56,35 +44,26 @@ def search_knowledge_base(
             "search_timestamp": datetime.now().isoformat()
         }
         
-        # Search incidents
-        if include_incidents:
-            incident_results = _search_incidents_comprehensive(search_terms, limit)
-            results["results"]["incidents"] = incident_results
-            results["total_results"] += len(incident_results)
+        # Search all data sources
+        incidents = _search_incidents_simple(search_terms, limit)
+        jira_issues = _search_jira_issues_simple(search_terms, limit)
+        jira_comments = _search_jira_comments_simple(search_terms, limit)
+        jira_changelog = _search_jira_changelog_simple(search_terms, limit)
         
-        # Search JIRA issues
-        if include_jira_issues:
-            jira_issue_results = _search_jira_issues_comprehensive(search_terms, limit)
-            results["results"]["jira_issues"] = jira_issue_results
-            results["total_results"] += len(jira_issue_results)
+        results["results"] = {
+            "incidents": incidents,
+            "jira_issues": jira_issues,
+            "jira_comments": jira_comments,
+            "jira_changelog": jira_changelog
+        }
         
-        # Search JIRA comments
-        if include_jira_comments:
-            jira_comment_results = _search_jira_comments_comprehensive(search_terms, limit)
-            results["results"]["jira_comments"] = jira_comment_results
-            results["total_results"] += len(jira_comment_results)
+        results["total_results"] = len(incidents) + len(jira_issues) + len(jira_comments) + len(jira_changelog)
         
-        # Search JIRA changelog
-        if include_jira_changelog:
-            jira_changelog_results = _search_jira_changelog_comprehensive(search_terms, limit)
-            results["results"]["jira_changelog"] = jira_changelog_results
-            results["total_results"] += len(jira_changelog_results)
-        
-        # Store results in context for follow-up questions
+        # Store results in context
         tool_context.state["last_knowledge_search"] = results
         
-        # Generate summary
-        results["summary"] = _generate_search_summary(results)
+        # Generate simple summary
+        results["summary"] = _generate_simple_summary(results)
         
         logger.info(f"Knowledge base search completed: {results['total_results']} total results")
         return results
@@ -127,10 +106,10 @@ def answer_devops_question(
         # Analyze results and generate answer
         answer_data = _analyze_results_for_answer(question, search_results)
         
-        # Determine if we have sufficient information
+        # Simple confidence check
         has_sufficient_info = (
             search_results["total_results"] > 0 and 
-            answer_data["confidence"] > 0.3
+            answer_data["confidence"] > 0.2
         )
         
         if has_sufficient_info:
@@ -145,7 +124,6 @@ def answer_devops_question(
                 "source": "knowledge_base"
             }
         else:
-            # Knowledge base doesn't have sufficient information
             return {
                 "question": question,
                 "answer_found": False,
@@ -199,7 +177,7 @@ def find_similar_issues(
         
         # Process incidents
         for incident in search_results["results"].get("incidents", []):
-            if incident.get("resolution") and incident.get("resolution") != "":
+            if incident.get("resolution"):
                 similar_issues.append({
                     "type": "incident",
                     "id": incident.get("number"),
@@ -207,8 +185,7 @@ def find_similar_issues(
                     "description": incident.get("description", ""),
                     "resolution": incident.get("resolution", ""),
                     "category": incident.get("category", ""),
-                    "priority": incident.get("priority", ""),
-                    "state": incident.get("incident_state", "")
+                    "priority": incident.get("priority", "")
                 })
         
         # Process JIRA issues
@@ -221,12 +198,11 @@ def find_similar_issues(
                     "description": issue.get("description", ""),
                     "resolution": issue.get("resolution.name", ""),
                     "status": issue.get("status.name", ""),
-                    "priority": issue.get("priority.name", ""),
-                    "project": issue.get("project.key", "")
+                    "priority": issue.get("priority.name", "")
                 })
         
-        # Sort by relevance (simplified scoring)
-        similar_issues.sort(key=lambda x: len(x.get("resolution", "")), reverse=True)
+        # Simple sort by resolution length (basic relevance)
+        similar_issues.sort(key=lambda x: len(str(x.get("resolution", ""))), reverse=True)
         
         return {
             "query": issue_description,
@@ -251,14 +227,14 @@ def get_historical_patterns(
     time_period_days: int = 365
 ) -> Dict[str, Any]:
     """
-    Get historical patterns from the knowledge base
+    Get simple historical patterns from the knowledge base
     
     Args:
-        pattern_type: Type of patterns to analyze (all, incidents, jira, failures)
-        time_period_days: Time period to analyze
+        pattern_type: Type of patterns to analyze (all, incidents, jira)
+        time_period_days: Time period to analyze (simplified)
     
     Returns:
-        Dictionary with historical patterns and insights
+        Dictionary with historical patterns
     """
     try:
         logger.info(f"Analyzing historical patterns: {pattern_type}")
@@ -270,17 +246,12 @@ def get_historical_patterns(
             "patterns": {}
         }
         
-        # Analyze incident patterns
+        # Simple pattern analysis
         if pattern_type in ["all", "incidents"]:
-            patterns["patterns"]["incidents"] = _analyze_incident_patterns(time_period_days)
+            patterns["patterns"]["incidents"] = _analyze_incident_patterns_simple()
         
-        # Analyze JIRA patterns
         if pattern_type in ["all", "jira"]:
-            patterns["patterns"]["jira"] = _analyze_jira_patterns(time_period_days)
-        
-        # Analyze failure patterns
-        if pattern_type in ["all", "failures"]:
-            patterns["patterns"]["failures"] = _analyze_failure_patterns(time_period_days)
+            patterns["patterns"]["jira"] = _analyze_jira_patterns_simple()
         
         return patterns
         
@@ -293,45 +264,38 @@ def get_historical_patterns(
         }
 
 
-def _extract_search_terms(query: str) -> List[str]:
-    """Extract key search terms from a query"""
-    # Common DevOps/SRE terms
-    devops_terms = [
-        "error", "failure", "issue", "bug", "problem", "outage", "downtime",
-        "performance", "latency", "timeout", "connection", "database", "server",
-        "service", "api", "deployment", "release", "rollback", "monitoring",
-        "alert", "cpu", "memory", "disk", "network", "load", "scaling",
-        "kubernetes", "docker", "container", "pod", "namespace", "cluster",
-        "nginx", "apache", "mysql", "postgresql", "redis", "kafka", "elk",
-        "prometheus", "grafana", "jenkins", "git", "aws", "gcp", "azure"
-    ]
-    
-    # Extract terms from query
-    terms = []
+# === SIMPLIFIED HELPER FUNCTIONS ===
+
+def _extract_simple_terms(query: str) -> List[str]:
+    """Extract simple search terms from query"""
+    # Simple word extraction, more flexible
     words = re.findall(r'\b\w+\b', query.lower())
     
-    for word in words:
-        if len(word) > 3:  # Include longer words
-            terms.append(word)
+    # Filter out very short words and common stop words
+    stop_words = {'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 
+    'to', 'for', 'of', 'with', 'by', 'the', 'is', 'are', 'was', 'were', 
+    'be', 'been', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 
+    'would', 'could', 'should', 'may', 'might', 'can', 'that', 'this', 
+    'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 
+    'him', 'her', 'us', 'them', 'my', 'your', 'his', 'her', 'its', 'our', 'their'}
     
-    # Add recognized DevOps terms
-    for term in devops_terms:
-        if term in query.lower():
-            terms.append(term)
+    terms = [word for word in words if len(word) > 2 and word not in stop_words]
     
     return list(set(terms))
 
 
-def _search_incidents_comprehensive(terms: List[str], limit: int) -> List[Dict[str, Any]]:
-    """Search incidents comprehensively"""
+def _search_incidents_simple(terms: List[str], limit: int) -> List[Dict[str, Any]]:
+    """Simple incident search"""
     try:
         incidents_df = load_incident_data()
         if incidents_df.empty:
             return []
         
-        # Create search mask
-        search_mask = pd.Series([False] * len(incidents_df))
+        # Simple search across key fields
+        if not terms:
+            return [row.to_dict() for _, row in incidents_df.head(limit).iterrows()]
         
+        search_mask = pd.Series([False] * len(incidents_df))
         search_columns = ['u_symptom', 'short_description', 'description', 'category', 'subcategory', 'resolution']
         
         for term in terms:
@@ -341,15 +305,15 @@ def _search_incidents_comprehensive(terms: List[str], limit: int) -> List[Dict[s
                     search_mask = search_mask | mask
         
         filtered_df = incidents_df[search_mask].head(limit)
-        return filtered_df.to_dict(orient='records')
+        return [row.to_dict() for _, row in filtered_df.iterrows()]
         
     except Exception as e:
         logger.warning(f"Error searching incidents: {e}")
         return []
 
 
-def _search_jira_issues_comprehensive(terms: List[str], limit: int) -> List[Dict[str, Any]]:
-    """Search JIRA issues comprehensively"""
+def _search_jira_issues_simple(terms: List[str], limit: int) -> List[Dict[str, Any]]:
+    """Simple JIRA issues search"""
     try:
         jira_data = load_jira_data()
         issues_df = jira_data.get('issues', pd.DataFrame())
@@ -357,10 +321,11 @@ def _search_jira_issues_comprehensive(terms: List[str], limit: int) -> List[Dict
         if issues_df.empty:
             return []
         
-        # Create search mask
-        search_mask = pd.Series([False] * len(issues_df))
+        if not terms:
+            return [row.to_dict() for _, row in issues_df.head(limit).iterrows()]
         
-        search_columns = ['summary', 'description', 'status.name', 'priority.name', 'labels']
+        search_mask = pd.Series([False] * len(issues_df))
+        search_columns = ['summary', 'description', 'status.name', 'priority.name']
         
         for term in terms:
             for col in search_columns:
@@ -369,15 +334,15 @@ def _search_jira_issues_comprehensive(terms: List[str], limit: int) -> List[Dict
                     search_mask = search_mask | mask
         
         filtered_df = issues_df[search_mask].head(limit)
-        return filtered_df.to_dict(orient='records')
+        return [row.to_dict() for _, row in filtered_df.iterrows()]
         
     except Exception as e:
         logger.warning(f"Error searching JIRA issues: {e}")
         return []
 
 
-def _search_jira_comments_comprehensive(terms: List[str], limit: int) -> List[Dict[str, Any]]:
-    """Search JIRA comments comprehensively"""
+def _search_jira_comments_simple(terms: List[str], limit: int) -> List[Dict[str, Any]]:
+    """Simple JIRA comments search"""
     try:
         jira_data = load_jira_data()
         comments_df = jira_data.get('comments', pd.DataFrame())
@@ -385,7 +350,9 @@ def _search_jira_comments_comprehensive(terms: List[str], limit: int) -> List[Di
         if comments_df.empty:
             return []
         
-        # Create search mask
+        if not terms:
+            return [row.to_dict() for _, row in comments_df.head(limit).iterrows()]
+        
         search_mask = pd.Series([False] * len(comments_df))
         
         for term in terms:
@@ -393,15 +360,15 @@ def _search_jira_comments_comprehensive(terms: List[str], limit: int) -> List[Di
             search_mask = search_mask | mask
         
         filtered_df = comments_df[search_mask].head(limit)
-        return filtered_df.to_dict(orient='records')
+        return [row.to_dict() for _, row in filtered_df.iterrows()]
         
     except Exception as e:
         logger.warning(f"Error searching JIRA comments: {e}")
         return []
 
 
-def _search_jira_changelog_comprehensive(terms: List[str], limit: int) -> List[Dict[str, Any]]:
-    """Search JIRA changelog comprehensively"""
+def _search_jira_changelog_simple(terms: List[str], limit: int) -> List[Dict[str, Any]]:
+    """Simple JIRA changelog search"""
     try:
         jira_data = load_jira_data()
         changelog_df = jira_data.get('changelog', pd.DataFrame())
@@ -409,9 +376,10 @@ def _search_jira_changelog_comprehensive(terms: List[str], limit: int) -> List[D
         if changelog_df.empty:
             return []
         
-        # Create search mask
-        search_mask = pd.Series([False] * len(changelog_df))
+        if not terms:
+            return [row.to_dict() for _, row in changelog_df.head(limit).iterrows()]
         
+        search_mask = pd.Series([False] * len(changelog_df))
         search_columns = ['field', 'fromString', 'toString', 'authorDisplayName']
         
         for term in terms:
@@ -421,7 +389,7 @@ def _search_jira_changelog_comprehensive(terms: List[str], limit: int) -> List[D
                     search_mask = search_mask | mask
         
         filtered_df = changelog_df[search_mask].head(limit)
-        return filtered_df.to_dict(orient='records')
+        return [row.to_dict() for _, row in filtered_df.iterrows()]
         
     except Exception as e:
         logger.warning(f"Error searching JIRA changelog: {e}")
@@ -429,13 +397,13 @@ def _search_jira_changelog_comprehensive(terms: List[str], limit: int) -> List[D
 
 
 def _analyze_results_for_answer(question: str, search_results: Dict[str, Any]) -> Dict[str, Any]:
-    """Analyze search results to generate an answer"""
+    """Simple answer analysis from search results"""
     evidence = []
     confidence = 0.0
     
-    # Analyze incidents
+    # Analyze incidents (simplified)
     incidents = search_results["results"].get("incidents", [])
-    for incident in incidents[:3]:  # Top 3 most relevant
+    for incident in incidents[:2]:  # Top 2 most relevant
         if incident.get("resolution"):
             evidence.append({
                 "type": "incident",
@@ -444,11 +412,11 @@ def _analyze_results_for_answer(question: str, search_results: Dict[str, Any]) -
                 "resolution": incident.get("resolution", ""),
                 "category": incident.get("category", "")
             })
-            confidence += 0.2
+            confidence += 0.3
     
-    # Analyze JIRA issues
+    # Analyze JIRA issues (simplified)
     jira_issues = search_results["results"].get("jira_issues", [])
-    for issue in jira_issues[:3]:  # Top 3 most relevant
+    for issue in jira_issues[:2]:  # Top 2 most relevant
         if issue.get("resolution.name"):
             evidence.append({
                 "type": "jira_issue",
@@ -457,38 +425,35 @@ def _analyze_results_for_answer(question: str, search_results: Dict[str, Any]) -
                 "resolution": issue.get("resolution.name", ""),
                 "status": issue.get("status.name", "")
             })
-            confidence += 0.25
+            confidence += 0.3
     
-    # Analyze comments for solutions
+    # Analyze comments (simplified)
     comments = search_results["results"].get("jira_comments", [])
-    for comment in comments[:2]:  # Top 2 most relevant
-        if len(comment.get("body", "")) > 50:  # Substantial comments
+    for comment in comments[:1]:  # Top 1 most relevant
+        if len(str(comment.get("body", ""))) > 30:
             evidence.append({
                 "type": "jira_comment",
                 "issue_key": comment.get("issue", ""),
                 "author": comment.get("author", ""),
-                "content": comment.get("body", "")[:200] + "..."
+                "content": str(comment.get("body", ""))[:150] + "..." if len(str(comment.get("body", ""))) > 150 else str(comment.get("body", ""))
             })
-            confidence += 0.15
+            confidence += 0.2
     
-    # Generate answer based on evidence
+    # Generate simple answer
     if evidence:
-        answer = f"Based on historical data, here are relevant solutions and insights:\n\n"
+        answer = f"Based on historical data:\n\n"
         
         for i, item in enumerate(evidence, 1):
             if item["type"] == "incident":
                 answer += f"{i}. **Incident {item['id']}**: {item['title']}\n"
-                answer += f"   - Resolution: {item['resolution']}\n"
-                answer += f"   - Category: {item['category']}\n\n"
+                answer += f"   Resolution: {item['resolution']}\n\n"
             elif item["type"] == "jira_issue":
                 answer += f"{i}. **JIRA Issue {item['id']}**: {item['title']}\n"
-                answer += f"   - Resolution: {item['resolution']}\n"
-                answer += f"   - Status: {item['status']}\n\n"
+                answer += f"   Resolution: {item['resolution']}\n\n"
             elif item["type"] == "jira_comment":
-                answer += f"{i}. **Comment on {item['issue_key']}** by {item['author']}:\n"
-                answer += f"   - {item['content']}\n\n"
+                answer += f"{i}. **Comment**: {item['content']}\n\n"
     else:
-        answer = "No specific solutions found in the knowledge base for this question."
+        answer = "No specific solutions found in the knowledge base."
         confidence = 0.0
     
     return {
@@ -498,14 +463,14 @@ def _analyze_results_for_answer(question: str, search_results: Dict[str, Any]) -
     }
 
 
-def _generate_search_summary(results: Dict[str, Any]) -> str:
-    """Generate a summary of search results"""
+def _generate_simple_summary(results: Dict[str, Any]) -> str:
+    """Generate simple summary of search results"""
     total = results["total_results"]
     
     if total == 0:
         return "No results found in the knowledge base."
     
-    summary = f"Found {total} relevant items across the knowledge base:\n"
+    summary = f"Found {total} relevant items:\n"
     
     for source, items in results["results"].items():
         if items:
@@ -514,20 +479,18 @@ def _generate_search_summary(results: Dict[str, Any]) -> str:
     return summary
 
 
-def _analyze_incident_patterns(days: int) -> Dict[str, Any]:
-    """Analyze incident patterns"""
+def _analyze_incident_patterns_simple() -> Dict[str, Any]:
+    """Simple incident pattern analysis"""
     try:
         incidents_df = load_incident_data()
         if incidents_df.empty:
             return {"error": "No incident data available"}
         
-        # Basic pattern analysis
+        # Basic counts
         patterns = {
             "total_incidents": len(incidents_df),
-            "categories": incidents_df['category'].value_counts().head(10).to_dict(),
-            "priorities": incidents_df['priority'].value_counts().to_dict(),
-            "states": incidents_df['incident_state'].value_counts().to_dict(),
-            "assignment_groups": incidents_df['assignment_group'].value_counts().head(10).to_dict()
+            "top_categories": incidents_df['category'].value_counts().head(5).to_dict() if 'category' in incidents_df.columns else {},
+            "top_priorities": incidents_df['priority'].value_counts().head(5).to_dict() if 'priority' in incidents_df.columns else {}
         }
         
         return patterns
@@ -536,8 +499,8 @@ def _analyze_incident_patterns(days: int) -> Dict[str, Any]:
         return {"error": str(e)}
 
 
-def _analyze_jira_patterns(days: int) -> Dict[str, Any]:
-    """Analyze JIRA patterns"""
+def _analyze_jira_patterns_simple() -> Dict[str, Any]:
+    """Simple JIRA pattern analysis"""
     try:
         jira_data = load_jira_data()
         issues_df = jira_data.get('issues', pd.DataFrame())
@@ -545,37 +508,11 @@ def _analyze_jira_patterns(days: int) -> Dict[str, Any]:
         if issues_df.empty:
             return {"error": "No JIRA data available"}
         
-        # Basic pattern analysis
+        # Basic counts
         patterns = {
             "total_issues": len(issues_df),
-            "statuses": issues_df['status.name'].value_counts().head(10).to_dict(),
-            "priorities": issues_df['priority.name'].value_counts().to_dict(),
-            "issue_types": issues_df['issuetype.name'].value_counts().to_dict(),
-            "projects": issues_df['project.key'].value_counts().head(10).to_dict()
-        }
-        
-        return patterns
-        
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def _analyze_failure_patterns(days: int) -> Dict[str, Any]:
-    """Analyze failure patterns"""
-    try:
-        # Analyze high-priority incidents and critical JIRA issues
-        incidents_df = load_incident_data()
-        high_priority_incidents = incidents_df[incidents_df['priority'].str.contains('High|Critical', case=False, na=False)]
-        
-        jira_data = load_jira_data()
-        issues_df = jira_data.get('issues', pd.DataFrame())
-        critical_issues = issues_df[issues_df['priority.name'].str.contains('Critical|Highest', case=False, na=False)]
-        
-        patterns = {
-            "high_priority_incidents": len(high_priority_incidents),
-            "critical_jira_issues": len(critical_issues),
-            "incident_categories": high_priority_incidents['category'].value_counts().head(5).to_dict(),
-            "critical_issue_types": critical_issues['issuetype.name'].value_counts().head(5).to_dict()
+            "top_statuses": issues_df['status.name'].value_counts().head(5).to_dict() if 'status.name' in issues_df.columns else {},
+            "top_priorities": issues_df['priority.name'].value_counts().head(5).to_dict() if 'priority.name' in issues_df.columns else {}
         }
         
         return patterns

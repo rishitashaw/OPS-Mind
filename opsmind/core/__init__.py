@@ -10,7 +10,7 @@ from .agents import (
     root,
 )
 
-from .safety import guardrail
+from .safety import safety_agent
 
 # Initialize guardrails on module import
 from .safety import initialize_default_guardrails
@@ -30,5 +30,5 @@ __all__ = [
     'pipeline',
     'search',
     'root',
-    'guardrail'
+    'safety_agent'
 ] 

@@ -1,12 +1,11 @@
 """
-OpsMind Safety Module
+OpsMind Safety Module - MVP Version
 
-Comprehensive safety and security mechanisms including:
+Basic safety and security mechanisms including:
 - Guardrails framework (Google ADK compliant)
 - UI content escaping for XSS prevention
-- Rate limiting and circuit breakers
-- Resource monitoring
-- Data sanitization
+- Rate limiting
+- Basic validation
 """
 
 from .framework import (
@@ -22,21 +21,10 @@ from .framework import (
     # Individual guardrail classes
     ValidationGuardrail,
     RateLimitGuardrail,
-    CircuitBreakerGuardrail,
-    ResourceMonitorGuardrail,
-    DataSanitizationGuardrail,
     UIContentEscapingGuardrail,
 )
 
-from .agent import guardrail
-from .tools import (
-    check_guardrails_health,
-    get_guardrail_stats,
-    initialize_guardrails,
-    test_guardrails,
-    configure_guardrail,
-    get_system_resources,
-)
+from .agent import safety_agent
 
 __all__ = [
     # Core guardrail framework
@@ -53,17 +41,8 @@ __all__ = [
     # Individual guardrail classes
     "ValidationGuardrail",
     "RateLimitGuardrail", 
-    "CircuitBreakerGuardrail",
-    "ResourceMonitorGuardrail",
-    "DataSanitizationGuardrail",
     "UIContentEscapingGuardrail",
     
-    # Agent and tools
-    "guardrail",
-    "check_guardrails_health",
-    "get_guardrail_stats",
-    "initialize_guardrails",
-    "test_guardrails",
-    "configure_guardrail",
-    "get_system_resources",
+    # Agent
+    "safety_agent",
 ] 
