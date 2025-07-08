@@ -2,6 +2,7 @@
 Root Agent for OpsMind - Entry point with enhanced Jira capabilities
 """
 from google.adk.agents import Agent
+from google.adk.tools.agent_tool import AgentTool
 from google.genai import types
 from opsmind.config import MODEL_NAME
 from opsmind.core.agents.search import search
@@ -146,7 +147,7 @@ root = Agent(
     generate_content_config=types.GenerateContentConfig(
         top_p=0.1,
     ),
-    sub_agents=[pipeline, search],
+    sub_agents=[pipeline],
     tools=[
         # Knowledge Repository Tools
         search_knowledge_base,
@@ -171,6 +172,8 @@ root = Agent(
         get_jira_issue_details,
         # Safety Tools
         check_guardrails_health, 
-        get_system_resources
+        get_system_resources,
+        #search tool
+        AgentTool(agent=search)
     ]
 ) 

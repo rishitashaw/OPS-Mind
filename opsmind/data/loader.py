@@ -17,15 +17,14 @@ from opsmind.config import (
 )
 from opsmind.utils import validate_csv_file
 
-
 def load_incident_data() -> pd.DataFrame:
-    """Load incident data from CSV file"""
+    """Load incident data from CSV file (limited to first 1000 rows)"""
     try:
         if not INCIDENT_DATA_PATH.exists():
             logger.warning(f"Incident data file not found: {INCIDENT_DATA_PATH}")
             return pd.DataFrame()
         
-        df = pd.read_csv(INCIDENT_DATA_PATH, keep_default_na=False, na_values=[''])
+        df = pd.read_csv(INCIDENT_DATA_PATH, nrows=1000, keep_default_na=False, na_values=[''])
         df = df.fillna('')
         logger.info(f"Loaded {len(df)} incident records from {INCIDENT_DATA_PATH}")
         return df
@@ -35,10 +34,9 @@ def load_incident_data() -> pd.DataFrame:
 
 
 def load_jira_data() -> Dict[str, pd.DataFrame]:
-    """Load all Jira data from CSV files"""
+    """Load all Jira data from CSV files (limited to first 1000 rows per file)"""
     jira_data = {}
     
-    # Define file mappings
     file_mappings = {
         'issues': JIRA_ISSUES_PATH,
         'comments': JIRA_COMMENTS_PATH,
@@ -53,7 +51,7 @@ def load_jira_data() -> Dict[str, pd.DataFrame]:
                 jira_data[data_type] = pd.DataFrame()
                 continue
             
-            df = pd.read_csv(file_path, keep_default_na=False, na_values=[''])
+            df = pd.read_csv(file_path, nrows=1000, keep_default_na=False, na_values=[''])
             df = df.fillna('')
             jira_data[data_type] = df
             logger.info(f"Loaded {len(df)} Jira {data_type} records from {file_path}")
@@ -63,7 +61,6 @@ def load_jira_data() -> Dict[str, pd.DataFrame]:
             jira_data[data_type] = pd.DataFrame()
     
     return jira_data
-
 
 def search_jira_issues(
     search_term: str = "",

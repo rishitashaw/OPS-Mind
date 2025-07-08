@@ -2,7 +2,7 @@
 Guardrail management tools for OpsMind agents
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 from google.adk.tools.tool_context import ToolContext
 from opsmind.config import logger
 from opsmind.core.safety import (

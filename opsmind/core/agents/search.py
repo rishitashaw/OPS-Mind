@@ -3,7 +3,6 @@ Search Agent for OpsMind - Dedicated Google Search capability
 """
 from google.adk.agents import Agent
 from google.adk.tools import google_search
-from google.genai import types
 from opsmind.config import MODEL_NAME
 
 # Dedicated Search Agent with Google Search built-in tool
@@ -33,9 +32,5 @@ search = Agent(
     
     Always provide clear, actionable information with proper source attribution.
     """,
-    generate_content_config=types.GenerateContentConfig(
-        top_p=0.1,
-    ),
-    # Only google_search tool - per ADK limitations, can't mix with other tools
     tools=[google_search]
 ) 

@@ -2,6 +2,9 @@
 Pipeline Agent for OpsMind - Complete incident-to-insight processing pipeline
 """
 from google.adk.agents import SequentialAgent
+
+from opsmind.core.safety import guardrail
+
 from .listener import listener
 from .synthesizer import synthesizer
 from .writer import writer
@@ -10,5 +13,5 @@ from .writer import writer
 pipeline = SequentialAgent(
     name="pipeline",
     description="Complete incident-to-insight processing pipeline with enhanced Jira integration",
-    sub_agents=[listener, synthesizer, writer]
+    sub_agents=[guardrail, listener, synthesizer, writer]
 ) 
