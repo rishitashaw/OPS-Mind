@@ -361,7 +361,9 @@ def _search_jira_comments_simple(terms: List[str], limit: int) -> List[Dict[str,
         search_mask = pd.Series([False] * len(comments_df))
         
         for term in terms:
-            mask = comments_df['body'].astype(str).str.contains(term, case=False, na=False)
+            # Use the correct column name from the CSV
+            body_col = 'comment.body' if 'comment.body' in comments_df.columns else 'body'
+            mask = comments_df[body_col].astype(str).str.contains(term, case=False, na=False)
             search_mask = search_mask | mask
         
         filtered_df = comments_df[search_mask].head(limit)
@@ -385,7 +387,7 @@ def _search_jira_changelog_simple(terms: List[str], limit: int) -> List[Dict[str
             return [row.to_dict() for _, row in changelog_df.head(limit).iterrows()]
         
         search_mask = pd.Series([False] * len(changelog_df))
-        search_columns = ['field', 'fromString', 'toString', 'authorDisplayName']
+        search_columns = ['field', 'fromString', 'toString', 'author']
         
         for term in terms:
             for col in search_columns:
@@ -435,12 +437,13 @@ def _analyze_results_for_answer(question: str, search_results: Dict[str, Any]) -
     # Analyze comments (simplified)
     comments = search_results["results"].get("jira_comments", [])
     for comment in comments[:1]:  # Top 1 most relevant
-        if len(str(comment.get("body", ""))) > 30:
+        body_text = str(comment.get("comment.body", comment.get("body", "")))
+        if len(body_text) > 30:
             evidence.append({
                 "type": "jira_comment",
-                "issue_key": comment.get("issue", ""),
-                "author": comment.get("author", ""),
-                "content": str(comment.get("body", ""))[:150] + "..." if len(str(comment.get("body", ""))) > 150 else str(comment.get("body", ""))
+                "issue_key": comment.get("key", comment.get("issue", "")),
+                "author": comment.get("comment.author", comment.get("author", "")),
+                "content": body_text[:150] + "..." if len(body_text) > 150 else body_text
             })
             confidence += 0.2
     
