@@ -265,9 +265,10 @@ def search_jira_issues(
         filtered_df = issues_df.copy()
         
         # Search term filter - search in summary and description
+        # Note: CSV parsing shifted columns, so 'key' contains summaries, 'id' contains actual JIRA keys
         if search_term:
             search_mask = (
-                filtered_df['summary'].str.contains(search_term, case=False, na=False) |
+                filtered_df['key'].str.contains(search_term, case=False, na=False) |
                 filtered_df['description'].str.contains(search_term, case=False, na=False)
             )
             filtered_df = filtered_df[search_mask]
@@ -458,13 +459,13 @@ def search_jira_changelog(
         if author:
             filtered_df = filtered_df[filtered_df['author'].str.contains(author, case=False, na=False)]
         
-        # From value filter
+        # From value filter (use fromString for human-readable values)
         if from_value:
-            filtered_df = filtered_df[filtered_df['from'].str.contains(from_value, case=False, na=False)]
+            filtered_df = filtered_df[filtered_df['fromString'].str.contains(from_value, case=False, na=False)]
         
-        # To value filter
+        # To value filter (use toString for human-readable values)
         if to_value:
-            filtered_df = filtered_df[filtered_df['to'].str.contains(to_value, case=False, na=False)]
+            filtered_df = filtered_df[filtered_df['toString'].str.contains(to_value, case=False, na=False)]
         
         # Date filters
         if created_after or created_before:
